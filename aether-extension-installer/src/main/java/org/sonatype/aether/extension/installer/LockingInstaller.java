@@ -102,10 +102,11 @@ public class LockingInstaller
 
     public LockingInstaller( Logger logger, FileProcessor fileProcessor,
                              List<MetadataGeneratorFactory> metadataFactories,
-                             List<LocalRepositoryMaintainer> localRepositoryMaintainers )
+                             List<LocalRepositoryMaintainer> localRepositoryMaintainers, LockManager lockManager )
     {
         setLogger( logger );
         setFileProcessor( fileProcessor );
+        setLockManager( lockManager );
         setMetadataFactories( metadataFactories );
         setLocalRepositoryMaintainers( localRepositoryMaintainers );
     }
