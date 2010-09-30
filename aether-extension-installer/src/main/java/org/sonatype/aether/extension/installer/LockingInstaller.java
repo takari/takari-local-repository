@@ -193,16 +193,16 @@ public class LockingInstaller
     {
         lockAll( session, request );
 
+        InstallResult result = new InstallResult( request );
+
+        List<MetadataGenerator> generators = getMetadataGenerators( session, request );
+
+        List<Artifact> artifacts = new ArrayList<Artifact>( request.getArtifacts() );
+
+        IdentityHashMap<Metadata, Object> processedMetadata = new IdentityHashMap<Metadata, Object>();
+
         try
         {
-            InstallResult result = new InstallResult( request );
-
-            List<MetadataGenerator> generators = getMetadataGenerators( session, request );
-
-            List<Artifact> artifacts = new ArrayList<Artifact>( request.getArtifacts() );
-
-            IdentityHashMap<Metadata, Object> processedMetadata = new IdentityHashMap<Metadata, Object>();
-
             try
             {
                 for ( MetadataGenerator generator : generators )
@@ -265,12 +265,12 @@ public class LockingInstaller
                 }
                 throw e;
             }
-            promote( session, request );
+            promote( session, result );
             return result;
         }
         finally
         {
-            cleanup( session, request );
+            cleanup( session, result );
             unlock( request );
         }
     }
@@ -338,14 +338,14 @@ public class LockingInstaller
         }
     }
 
-    private void promote( RepositorySystemSession session, InstallRequest request )
+    private void promote( RepositorySystemSession session, InstallResult result )
         throws InstallationException
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
 
         try
         {
-            for ( Artifact a : request.getArtifacts() )
+            for ( Artifact a : result.getArtifacts() )
             {
                 File dstFile = null;
                 Exception exception = null;
@@ -384,7 +384,7 @@ public class LockingInstaller
                     artifactInstalled( session, a, dstFile, exception );
                 }
             }
-            for ( Metadata m : request.getMetadata() )
+            for ( Metadata m : result.getMetadata() )
             {
                 File dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
                 Exception exception = null;
@@ -415,17 +415,17 @@ public class LockingInstaller
         {
             try
             {
-                rollback( session, request );
+                rollback( session, result );
             }
             catch ( Exception next )
             {
-                throw new InstallationException( "Rollback failed for " + request.toString() + ": " + e.getMessage() );
+                throw new InstallationException( "Rollback failed for " + result.toString() + ": " + e.getMessage() );
             }
-            throw new InstallationException( "Installation failed for " + request.toString() + ": " + e.getMessage() );
+            throw new InstallationException( "Installation failed for " + result.toString() + ": " + e.getMessage() );
         }
     }
 
-    private void rollback( RepositorySystemSession session, InstallRequest request )
+    private void rollback( RepositorySystemSession session, InstallResult result )
         throws IOException, RepositoryException
     {
         boolean failures = false;
@@ -433,7 +433,7 @@ public class LockingInstaller
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File basedir = lrm.getRepository().getBasedir();
 
-        for ( Artifact a : request.getArtifacts() )
+        for ( Artifact a : result.getArtifacts() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalArtifact( a ) );
 
@@ -446,7 +446,7 @@ public class LockingInstaller
                 failures = true;
             }
         }
-        for ( Metadata m : request.getMetadata() )
+        for ( Metadata m : result.getMetadata() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalMetadata( m ) );
 
@@ -461,16 +461,16 @@ public class LockingInstaller
         }
         if ( failures )
         {
-            throw new IOException( "Installation failed: " + request );
+            throw new IOException( "Installation failed: " + result );
         }
     }
 
-    private void cleanup( RepositorySystemSession session, InstallRequest request )
+    private void cleanup( RepositorySystemSession session, InstallResult result )
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File basedir = lrm.getRepository().getBasedir();
 
-        for ( Artifact a : request.getArtifacts() )
+        for ( Artifact a : result.getArtifacts() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalArtifact( a ) );
 
@@ -478,7 +478,7 @@ public class LockingInstaller
             deleteMarker( dstFile ).delete();
             stage( dstFile ).delete();
         }
-        for ( Metadata m : request.getMetadata() )
+        for ( Metadata m : result.getMetadata() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalMetadata( m ) );
 
