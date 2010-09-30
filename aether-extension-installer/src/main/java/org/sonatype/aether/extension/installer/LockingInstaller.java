@@ -279,21 +279,21 @@ public class LockingInstaller
         throws InstallationException
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
-    
+
         File srcFile = artifact.getFile();
-    
+
         File dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( artifact ) );
 
         File stagedFile = stage( dstFile );
-    
+
         artifactInstalling( session, artifact, dstFile );
-    
+
         try
         {
             boolean copy =
                 "pom".equals( artifact.getExtension() ) || srcFile.lastModified() != stagedFile.lastModified()
                     || srcFile.length() != stagedFile.length();
-    
+
             if ( copy )
             {
                 fileProcessor.copy( srcFile, stagedFile, null );
@@ -303,7 +303,7 @@ public class LockingInstaller
             {
                 logger.debug( "Skipped re-installing " + srcFile + " to " + dstFile + ", seems unchanged" );
             }
-    
+
             registrations.put( artifact, new LocalArtifactRegistration( artifact ) );
         }
         catch ( Exception e )
@@ -316,11 +316,11 @@ public class LockingInstaller
         throws InstallationException
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
-    
+
         File dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( metadata ) );
-    
+
         metadataInstalling( session, metadata, dstFile );
-    
+
         try
         {
             if ( metadata instanceof MergeableMetadata )
@@ -357,10 +357,10 @@ public class LockingInstaller
                     sanity( dstFile, transFile );
                     mark( dstFile );
 
-                    if ( !transFile.renameTo( dstFile ) )
+                    // no temporary -> unchanged src file, no error
+                    if ( transFile.exists() && !transFile.renameTo( dstFile ) )
                     {
-                        throw new IOException( String.format( "Could not install %s (rename %s to %s failed)", a,
-                                                            transFile, dstFile ) );
+                        fileProcessor.copy( transFile, dstFile, null );
                     }
 
                     lrm.add( session, registrations.get( a ) );
@@ -386,19 +386,18 @@ public class LockingInstaller
             }
             for ( Metadata m : request.getMetadata() )
             {
-                File realFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
+                File dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
                 Exception exception = null;
                 try
                 {
-                    File transFile = stage( realFile );
+                    File transFile = stage( dstFile );
 
-                    sanity( realFile, transFile );
-                    mark( realFile );
+                    sanity( dstFile, transFile );
+                    mark( dstFile );
 
-                    if ( !transFile.renameTo( realFile ) )
+                    if ( !transFile.renameTo( dstFile ) )
                     {
-                        throw new IOException( String.format( "Could not install %s (rename %s to %s failed)", m,
-                                                            transFile, realFile ) );
+                        fileProcessor.copy( transFile, dstFile, null );
                     }
                 }
                 catch ( Exception e )
@@ -408,7 +407,7 @@ public class LockingInstaller
                 }
                 finally
                 {
-                    metadataInstalled( session, m, realFile, exception );
+                    metadataInstalled( session, m, dstFile, exception );
                 }
             }
         }
@@ -430,14 +429,14 @@ public class LockingInstaller
         throws IOException, RepositoryException
     {
         boolean failures = false;
-    
+
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File basedir = lrm.getRepository().getBasedir();
-    
+
         for ( Artifact a : request.getArtifacts() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalArtifact( a ) );
-    
+
             if ( backupFile( dstFile ).exists() && !backupFile( dstFile ).renameTo( dstFile ) )
             {
                 failures = true;
@@ -450,7 +449,7 @@ public class LockingInstaller
         for ( Metadata m : request.getMetadata() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalMetadata( m ) );
-    
+
             if ( backupFile( dstFile ).exists() && !backupFile( dstFile ).renameTo( dstFile ) )
             {
                 failures = true;
@@ -470,11 +469,11 @@ public class LockingInstaller
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File basedir = lrm.getRepository().getBasedir();
-    
+
         for ( Artifact a : request.getArtifacts() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalArtifact( a ) );
-    
+
             backupFile( dstFile ).delete();
             deleteMarker( dstFile ).delete();
             stage( dstFile ).delete();
@@ -482,7 +481,7 @@ public class LockingInstaller
         for ( Metadata m : request.getMetadata() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalMetadata( m ) );
-    
+
             backupFile( dstFile ).delete();
             deleteMarker( dstFile ).delete();
             stage( dstFile ).delete();
