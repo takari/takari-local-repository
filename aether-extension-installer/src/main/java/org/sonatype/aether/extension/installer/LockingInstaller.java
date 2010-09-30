@@ -60,7 +60,7 @@ import org.sonatype.aether.util.listener.DefaultRepositoryEvent;
  * @author Benjamin Bentmann
  * @author Benjamin Hanzelmann
  */
-@Component( role = Installer.class, hint = "staging" )
+@Component( role = Installer.class, hint = "default" )
 public class LockingInstaller
     implements Installer, Service
 {
@@ -68,7 +68,7 @@ public class LockingInstaller
     @Requirement
     private Logger logger = NullLogger.INSTANCE;
 
-    @Requirement
+    @Requirement( hint = "locking" )
     private FileProcessor fileProcessor;
 
     @Requirement( role = LocalRepositoryMaintainer.class )

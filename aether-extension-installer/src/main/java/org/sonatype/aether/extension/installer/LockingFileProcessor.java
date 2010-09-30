@@ -33,7 +33,7 @@ import org.sonatype.aether.spi.io.FileProcessor;
  * 
  * @author Benjamin Hanzelmann
  */
-@Component( role = FileProcessor.class, hint = "locking" )
+@Component( role = FileProcessor.class, hint = "default" )
 public class LockingFileProcessor
     implements FileProcessor
 {
