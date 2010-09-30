@@ -1,11 +1,10 @@
 package org.sonatype.aether.extension.installer;
 
 import java.io.File;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.sonatype.aether.extension.installer.LockManager.Lock;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
 import edu.umd.cs.mtc.TestFramework;
@@ -32,7 +31,7 @@ public class DefaultLockManagerTest
         {
             public void thread1()
             {
-                WriteLock lock = manager.writeLock( a );
+                Lock lock = manager.writeLock( a );
                 lock.lock();
                 waitForTick( 3 );
                 lock.unlock();
@@ -41,7 +40,7 @@ public class DefaultLockManagerTest
             public void thread2()
             {
                 waitForTick( 1 );
-                WriteLock lock = manager.writeLock( b );
+                Lock lock = manager.writeLock( b );
                 lock.lock();
                 assertTick( 3 );
             }
@@ -59,7 +58,7 @@ public class DefaultLockManagerTest
         {
             public void thread1()
             {
-                WriteLock lock = manager.writeLock( a );
+                Lock lock = manager.writeLock( a );
                 lock.lock();
                 waitForTick( 2 );
                 lock.unlock();
@@ -68,7 +67,7 @@ public class DefaultLockManagerTest
             public void thread2()
             {
                 waitForTick( 1 );
-                ReadLock lock = manager.readLock( b );
+                Lock lock = manager.readLock( b );
                 lock.lock();
                 assertTick( 2 );
                 lock.unlock();
@@ -87,7 +86,7 @@ public class DefaultLockManagerTest
         {
             public void thread1()
             {
-                ReadLock lock = manager.readLock( a );
+                Lock lock = manager.readLock( a );
                 lock.lock();
                 waitForTick( 2 );
                 lock.unlock();
@@ -96,7 +95,7 @@ public class DefaultLockManagerTest
             public void thread2()
             {
                 waitForTick( 1 );
-                ReadLock lock = manager.readLock( b );
+                Lock lock = manager.readLock( b );
                 lock.lock();
                 assertTick( 1 );
                 lock.unlock();
@@ -115,7 +114,7 @@ public class DefaultLockManagerTest
         {
             public void thread1()
             {
-                ReadLock lock = manager.readLock( a );
+                Lock lock = manager.readLock( a );
                 lock.lock();
                 waitForTick( 2 );
                 lock.unlock();
@@ -124,7 +123,7 @@ public class DefaultLockManagerTest
             public void thread2()
             {
                 waitForTick( 1 );
-                WriteLock lock = manager.writeLock( b );
+                Lock lock = manager.writeLock( b );
                 lock.lock();
                 assertTick( 2 );
                 lock.unlock();
@@ -143,7 +142,7 @@ public class DefaultLockManagerTest
         {
             public void thread1()
             {
-                WriteLock lock = manager.writeLock( a );
+                Lock lock = manager.writeLock( a );
                 lock.lock();
                 waitForTick( 2 );
                 lock.unlock();
@@ -152,7 +151,7 @@ public class DefaultLockManagerTest
             public void thread2()
             {
                 waitForTick( 1 );
-                WriteLock lock = manager.writeLock( b );
+                Lock lock = manager.writeLock( b );
                 lock.lock();
                 assertTick( 2 );
                 lock.unlock();

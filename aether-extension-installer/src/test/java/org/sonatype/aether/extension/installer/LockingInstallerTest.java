@@ -29,13 +29,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonatype.aether.RepositoryEvent;
 import org.sonatype.aether.artifact.Artifact;
+import org.sonatype.aether.extension.installer.LockManager.Lock;
 import org.sonatype.aether.installation.InstallRequest;
 import org.sonatype.aether.installation.InstallResult;
 import org.sonatype.aether.installation.InstallationException;
@@ -373,7 +373,7 @@ public class LockingInstallerTest
             public void thread3()
             {
                 File f = new File( session.getLocalRepository().getBasedir(), localArtifactPath );
-                WriteLock lock = lockManager.writeLock( f );
+                Lock lock = lockManager.writeLock( f );
                 lock.lock();
                 waitForTick( 3 );
                 lock.unlock();

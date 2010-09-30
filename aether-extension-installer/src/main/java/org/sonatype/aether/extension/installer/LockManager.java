@@ -14,8 +14,6 @@ package org.sonatype.aether.extension.installer;
  */
 
 import java.io.File;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 /**
  * @author Benjamin Hanzelmann
@@ -23,7 +21,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 public interface LockManager
 {
 
-    WriteLock writeLock( File target );
+    Lock writeLock( File target );
 
-    ReadLock readLock( File target );
+    Lock readLock( File target );
+
+    public interface Lock
+    {
+        void lock();
+
+        void unlock();
+    }
 }

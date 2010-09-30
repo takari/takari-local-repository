@@ -21,11 +21,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.WritableByteChannel;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
+import org.sonatype.aether.extension.installer.LockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor;
 
 /**
@@ -128,8 +127,8 @@ public class LockingFileProcessor
         throws IOException
     {
 
-        ReadLock readLock = lockManager.readLock( src );
-        WriteLock writeLock = lockManager.writeLock( target );
+        Lock readLock = lockManager.readLock( src );
+        Lock writeLock = lockManager.writeLock( target );
 
         RandomAccessFile in = null;
         RandomAccessFile out = null;
@@ -233,7 +232,7 @@ public class LockingFileProcessor
     public void write( File file, String data )
         throws IOException
     {
-        WriteLock writeLock = lockManager.writeLock( file );
+        Lock writeLock = lockManager.writeLock( file );
 
         RandomAccessFile out = null;
         FileChannel channel = null;

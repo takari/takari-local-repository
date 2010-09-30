@@ -25,7 +25,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
@@ -33,6 +32,7 @@ import org.sonatype.aether.RepositoryException;
 import org.sonatype.aether.RepositoryListener;
 import org.sonatype.aether.RepositorySystemSession;
 import org.sonatype.aether.artifact.Artifact;
+import org.sonatype.aether.extension.installer.LockManager.Lock;
 import org.sonatype.aether.impl.Installer;
 import org.sonatype.aether.impl.LocalRepositoryMaintainer;
 import org.sonatype.aether.impl.MetadataGenerator;
@@ -68,7 +68,7 @@ public class LockingInstaller
     @Requirement
     private Logger logger = NullLogger.INSTANCE;
 
-    @Requirement( hint = "locking" )
+    @Requirement
     private FileProcessor fileProcessor;
 
     @Requirement( role = LocalRepositoryMaintainer.class )
@@ -80,8 +80,8 @@ public class LockingInstaller
     @Requirement
     private LockManager lockManager;
 
-    private Map<InstallRequest, Set<WriteLock>> locked =
-        Collections.synchronizedMap( new HashMap<InstallRequest, Set<WriteLock>>() );
+    private Map<InstallRequest, Set<Lock>> locked =
+        Collections.synchronizedMap( new HashMap<InstallRequest, Set<Lock>>() );
 
     private static final Comparator<MetadataGeneratorFactory> COMPARATOR = new Comparator<MetadataGeneratorFactory>()
     {
@@ -605,6 +605,12 @@ public class LockingInstaller
         }
     }
 
+    /**
+     * TODO use FileLock also (lock repo? single files? gid-directories?)
+     * 
+     * @param session
+     * @param request
+     */
     private synchronized void lockAll( RepositorySystemSession session, InstallRequest request )
     {
         if ( locked.containsKey( request ) )
@@ -615,7 +621,7 @@ public class LockingInstaller
 
         Collection<Artifact> artifacts = request.getArtifacts();
         Collection<Metadata> metadata = request.getMetadata();
-        Set<WriteLock> locks = new HashSet<WriteLock>();
+        Set<Lock> locks = new HashSet<Lock>();
 
         try
         {
@@ -624,7 +630,7 @@ public class LockingInstaller
                 LocalRepositoryManager lrm = session.getLocalRepositoryManager();
                 File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
 
-                WriteLock l = lockManager.writeLock( file );
+                Lock l = lockManager.writeLock( file );
                 l.lock();
                 locks.add( l );
             }
@@ -633,7 +639,7 @@ public class LockingInstaller
                 LocalRepositoryManager lrm = session.getLocalRepositoryManager();
                 File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
 
-                WriteLock l = lockManager.writeLock( file );
+                Lock l = lockManager.writeLock( file );
                 l.lock();
                 locks.add( l );
             }
@@ -646,9 +652,9 @@ public class LockingInstaller
         }
     }
 
-    private void unlock( Set<WriteLock> locks )
+    private void unlock( Set<Lock> locks )
     {
-        for ( WriteLock writeLock : locks )
+        for ( Lock writeLock : locks )
         {
             writeLock.unlock();
         }
@@ -656,7 +662,7 @@ public class LockingInstaller
 
     private void unlock( InstallRequest request )
     {
-        Set<WriteLock> locks = locked.get( request );
+        Set<Lock> locks = locked.get( request );
         locked.remove( request );
         unlock( locks );
     }
