@@ -291,8 +291,8 @@ public class LockingInstaller
         try
         {
             boolean copy =
-                "pom".equals( artifact.getExtension() ) || srcFile.lastModified() != stagedFile.lastModified()
-                    || srcFile.length() != stagedFile.length();
+                "pom".equals( artifact.getExtension() ) || srcFile.lastModified() != dstFile.lastModified()
+                    || srcFile.length() != dstFile.length();
             logger.debug( String.format( "compare:\n%s\n%s\n%s\n%s", srcFile.lastModified(), dstFile.lastModified(),
                                          srcFile.length(), dstFile.length() ) );
 
@@ -300,7 +300,7 @@ public class LockingInstaller
             {
                 logger.debug( String.format( "install: %s -> %s", srcFile, stagedFile ) );
                 fileProcessor.copy( srcFile, stagedFile, null );
-                dstFile.setLastModified( srcFile.lastModified() );
+                stagedFile.setLastModified( srcFile.lastModified() );
             }
             else
             {
@@ -432,9 +432,9 @@ public class LockingInstaller
             }
             catch ( Exception next )
             {
-                throw new InstallationException( "Rollback failed for " + result.toString() + ": " + e.getMessage() );
+                throw new InstallationException( "Rollback failed for " + result.toString() + ": " + e.getMessage(), e );
             }
-            throw new InstallationException( "Installation failed for " + result.toString() + ": " + e.getMessage() );
+            throw new InstallationException( "Installation failed for " + result.toString() + ": " + e.getMessage(), e );
         }
     }
 
@@ -518,7 +518,7 @@ public class LockingInstaller
     private void mark( File file )
         throws IOException
     {
-        if ( file.exists() )
+        if ( file.exists() && stage( file ).exists() )
         {
             boolean renamed = file.renameTo( backupFile( file ) );
 

@@ -14,16 +14,8 @@ package org.sonatype.aether.extension.installer;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.sonatype.aether.test.impl.RecordingRepositoryListener.Type.ARTIFACT_INSTALLED;
-import static org.sonatype.aether.test.impl.RecordingRepositoryListener.Type.ARTIFACT_INSTALLING;
-import static org.sonatype.aether.test.impl.RecordingRepositoryListener.Type.METADATA_INSTALLED;
-import static org.sonatype.aether.test.impl.RecordingRepositoryListener.Type.METADATA_INSTALLING;
+import static org.junit.Assert.*;
+import static org.sonatype.aether.test.impl.RecordingRepositoryListener.Type.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +28,7 @@ import org.junit.Test;
 import org.sonatype.aether.RepositoryEvent;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.extension.installer.LockManager.Lock;
+import org.sonatype.aether.impl.internal.DefaultFileProcessor;
 import org.sonatype.aether.installation.InstallRequest;
 import org.sonatype.aether.installation.InstallResult;
 import org.sonatype.aether.installation.InstallationException;
@@ -77,6 +70,10 @@ public class LockingInstallerTest
 
     private DefaultLockManager lockManager;
 
+    private File localArtifactFile;
+
+    private File localMetadataFile;
+
     @Before
     public void setup()
         throws IOException
@@ -90,6 +87,8 @@ public class LockingInstallerTest
         session = new TestRepositorySystemSession();
         localArtifactPath = session.getLocalRepositoryManager().getPathForLocalArtifact( artifact );
         localMetadataPath = session.getLocalRepositoryManager().getPathForLocalMetadata( metadata );
+        localArtifactFile = new File( session.getLocalRepository().getBasedir(), localArtifactPath );
+        localMetadataFile = new File( session.getLocalRepository().getBasedir(), localMetadataPath );
         lockManager = new DefaultLockManager();
         installer = new LockingInstaller().setFileProcessor( TestFileProcessor.INSTANCE ).setLockManager( lockManager );
         logger = new Logger()
@@ -337,6 +336,57 @@ public class LockingInstallerTest
         {
             assertNull( msg + " > " + event.getException(), event.getException() );
         }
+    }
+
+    @Test
+    public void testDoNotUpdateUnchangedArtifact()
+        throws InstallationException, IOException
+    {
+        request.addArtifact( artifact );
+        installer.install( session, request );
+    
+        installer.setFileProcessor( new DefaultFileProcessor()
+        {
+            @Override
+            public long copy( File src, File target, ProgressListener listener )
+                throws IOException
+            {
+                throw new IOException( "copy called" );
+            }
+        } );
+    
+        request = new InstallRequest();
+        request.addArtifact( artifact );
+        long lastModified = localArtifactFile.lastModified();
+        byte[] content = TestFileUtils.getContent( localArtifactFile );
+        installer.install( session, request );
+        assertEquals( "artifact file was changed", lastModified, localArtifactFile.lastModified() );
+        TestFileUtils.assertContent( content, localArtifactFile );
+    }
+
+    @Test
+    public void testSetArtifactTimestamps()
+        throws InstallationException
+    {
+        artifact.getFile().setLastModified( artifact.getFile().lastModified() - 60000 );
+    
+        request.addArtifact( artifact );
+    
+        installer.install( session, request );
+    
+        assertEquals( "artifact timestamp was not set to src file", artifact.getFile().lastModified(),
+                      localArtifactFile.lastModified() );
+    
+        request = new InstallRequest();
+    
+        request.addArtifact( artifact );
+    
+        artifact.getFile().setLastModified( artifact.getFile().lastModified() - 60000 );
+    
+        installer.install( session, request );
+    
+        assertEquals( "artifact timestamp was not set to src file", artifact.getFile().lastModified(),
+                      localArtifactFile.lastModified() );
     }
 
     @SuppressWarnings( "unused" )
