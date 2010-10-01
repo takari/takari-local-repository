@@ -290,7 +290,7 @@ public class LockingInstaller
 
         File dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( artifact ) );
 
-        File stagedFile = stage( dstFile );
+        File stagedFile = stage( artifact, dstFile );
 
         artifactInstalling( session, artifact, dstFile );
 
@@ -335,13 +335,13 @@ public class LockingInstaller
         {
             if ( metadata instanceof MergeableMetadata )
             {
-                logger.debug( String.format( "merge: %s -> %s", dstFile, stage( dstFile ) ) );
-                ( (MergeableMetadata) metadata ).merge( dstFile, stage( dstFile ) );
+                logger.debug( String.format( "merge: %s -> %s", dstFile, stage( metadata, dstFile ) ) );
+                ( (MergeableMetadata) metadata ).merge( dstFile, stage( metadata, dstFile ) );
             }
             else
             {
-                logger.debug( String.format( "copy: %s -> %s", metadata.getFile(), stage( dstFile ) ) );
-                fileProcessor.copy( metadata.getFile(), stage( dstFile ), null );
+                logger.debug( String.format( "copy: %s -> %s", metadata.getFile(), stage( metadata, dstFile ) ) );
+                fileProcessor.copy( metadata.getFile(), stage( metadata, dstFile ), null );
             }
         }
         catch ( Exception e )
@@ -365,10 +365,10 @@ public class LockingInstaller
                 try
                 {
                     dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
-                    File transFile = stage( dstFile );
+                    File transFile = stage( a,dstFile );
 
                     sanity( dstFile, transFile );
-                    mark( dstFile );
+                    mark( a,dstFile );
 
                     // no temporary -> unchanged src file, no error
                     logger.debug( String.format( "move: %s -> %s", transFile, dstFile ) );
@@ -408,10 +408,10 @@ public class LockingInstaller
                 Exception exception = null;
                 try
                 {
-                    File transFile = stage( dstFile );
+                    File transFile = stage( m,dstFile );
 
                     sanity( dstFile, transFile );
-                    mark( dstFile );
+                    mark( m,dstFile );
 
                     logger.debug( String.format( "move: %s -> %s", transFile, dstFile ) );
                     if ( !transFile.renameTo( dstFile ) )
@@ -458,11 +458,11 @@ public class LockingInstaller
         {
             File dstFile = new File( basedir, lrm.getPathForLocalArtifact( a ) );
 
-            if ( backupFile( dstFile ).exists() && !backupFile( dstFile ).renameTo( dstFile ) )
+            if ( backupFile( a, dstFile ).exists() && !backupFile( a, dstFile ).renameTo( dstFile ) )
             {
                 failures = true;
             }
-            if ( deleteMarker( dstFile ).exists() && dstFile.exists() && !dstFile.delete() )
+            if ( deleteMarker( a, dstFile ).exists() && dstFile.exists() && !dstFile.delete() )
             {
                 failures = true;
             }
@@ -471,11 +471,11 @@ public class LockingInstaller
         {
             File dstFile = new File( basedir, lrm.getPathForLocalMetadata( m ) );
 
-            if ( backupFile( dstFile ).exists() && !backupFile( dstFile ).renameTo( dstFile ) )
+            if ( backupFile( m, dstFile ).exists() && !backupFile( m, dstFile ).renameTo( dstFile ) )
             {
                 failures = true;
             }
-            if ( deleteMarker( dstFile ).exists() && dstFile.exists() && !dstFile.delete() )
+            if ( deleteMarker( m, dstFile ).exists() && dstFile.exists() && !dstFile.delete() )
             {
                 failures = true;
             }
@@ -495,17 +495,17 @@ public class LockingInstaller
         {
             File dstFile = new File( basedir, lrm.getPathForLocalArtifact( a ) );
 
-            backupFile( dstFile ).delete();
-            deleteMarker( dstFile ).delete();
-            stage( dstFile ).delete();
+            backupFile( a, dstFile ).delete();
+            deleteMarker( a, dstFile ).delete();
+            stage( a, dstFile ).delete();
         }
         for ( Metadata m : result.getMetadata() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalMetadata( m ) );
 
-            backupFile( dstFile ).delete();
-            deleteMarker( dstFile ).delete();
-            stage( dstFile ).delete();
+            backupFile( m, dstFile ).delete();
+            deleteMarker( m, dstFile ).delete();
+            stage( m, dstFile ).delete();
         }
     }
 
@@ -522,12 +522,12 @@ public class LockingInstaller
         }
     }
 
-    private void mark( File file )
+    private void mark( Object ctx, File file )
         throws IOException
     {
-        if ( file.exists() && stage( file ).exists() )
+        if ( file.exists() && stage( ctx, file ).exists() )
         {
-            boolean renamed = file.renameTo( backupFile( file ) );
+            boolean renamed = file.renameTo( backupFile( ctx, file ) );
 
             if ( !renamed )
             {
@@ -536,23 +536,23 @@ public class LockingInstaller
         }
         else
         {
-            deleteMarker( file ).createNewFile();
+            deleteMarker( ctx, file ).createNewFile();
         }
     }
 
-    private File stage( File dstFile )
+    private File stage( Object ctx, File dstFile )
     {
-        return new File( dstFile.getAbsolutePath() + ".tmp" );
+        return new File( dstFile.getAbsolutePath() + "." + ctx.hashCode() );
     }
 
-    private File backupFile( File transFile )
+    private File backupFile( Object ctx, File transFile )
     {
-        return new File( transFile.getAbsolutePath() + ".backup" );
+        return new File( transFile.getAbsolutePath() + "." + ctx.hashCode() + ".backup" );
     }
 
-    private File deleteMarker( File transFile )
+    private File deleteMarker( Object ctx, File transFile )
     {
-        return new File( transFile.getAbsolutePath() + ".delete" );
+        return new File( transFile.getAbsolutePath() + "." + ctx.hashCode() + ".delete" );
     }
 
     private List<MetadataGenerator> getMetadataGenerators( RepositorySystemSession session, InstallRequest request )
