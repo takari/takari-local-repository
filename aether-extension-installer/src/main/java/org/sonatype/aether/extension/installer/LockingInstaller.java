@@ -20,11 +20,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
@@ -80,8 +79,8 @@ public class LockingInstaller
     @Requirement
     private LockManager lockManager;
 
-    private Map<InstallRequest, Set<Lock>> locked =
-        Collections.synchronizedMap( new HashMap<InstallRequest, Set<Lock>>() );
+    private Map<InstallRequest, List<Lock>> locked =
+        Collections.synchronizedMap( new HashMap<InstallRequest, List<Lock>>() );
 
     private static final Comparator<MetadataGeneratorFactory> COMPARATOR = new Comparator<MetadataGeneratorFactory>()
     {
@@ -209,6 +208,7 @@ public class LockingInstaller
                 {
                     for ( Metadata metadata : generator.prepare( artifacts ) )
                     {
+                        lock( session, request, metadata );
                         install( session, metadata );
                         processedMetadata.put( metadata, null );
                         result.addMetadata( metadata );
@@ -234,6 +234,7 @@ public class LockingInstaller
                 {
                     for ( Metadata metadata : generator.finish( artifacts ) )
                     {
+                        lock( session, request, metadata );
                         install( session, metadata );
                         processedMetadata.put( metadata, null );
                         result.addMetadata( metadata );
@@ -318,6 +319,7 @@ public class LockingInstaller
     private void install( RepositorySystemSession session, Metadata metadata )
         throws InstallationException
     {
+
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
 
         File dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( metadata ) );
@@ -635,27 +637,17 @@ public class LockingInstaller
 
         Collection<Artifact> artifacts = request.getArtifacts();
         Collection<Metadata> metadata = request.getMetadata();
-        Set<Lock> locks = new HashSet<Lock>();
+        List<Lock> locks = new LinkedList<Lock>();
 
         try
         {
             for ( Artifact a : artifacts )
             {
-                LocalRepositoryManager lrm = session.getLocalRepositoryManager();
-                File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
-
-                Lock l = lockManager.writeLock( file );
-                l.lock();
-                locks.add( l );
+                lock( session, locks, a );
             }
             for ( Metadata m : metadata )
             {
-                LocalRepositoryManager lrm = session.getLocalRepositoryManager();
-                File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
-
-                Lock l = lockManager.writeLock( file );
-                l.lock();
-                locks.add( l );
+                lock( session, locks, m );
             }
             locked.put( request, locks );
         }
@@ -666,7 +658,32 @@ public class LockingInstaller
         }
     }
 
-    private void unlock( Set<Lock> locks )
+    private void lock ( RepositorySystemSession session, InstallRequest request, Metadata m)
+    {
+        lock( session, locked.get( request ), m );
+    }
+
+    private void lock( RepositorySystemSession session, List<Lock> locks, Metadata m )
+    {
+        LocalRepositoryManager lrm = session.getLocalRepositoryManager();
+        File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
+
+        Lock l = lockManager.writeLock( file );
+        l.lock();
+        locks.add( l );
+    }
+
+    private void lock( RepositorySystemSession session, List<Lock> locks, Artifact a )
+    {
+        LocalRepositoryManager lrm = session.getLocalRepositoryManager();
+        File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
+
+        Lock l = lockManager.writeLock( file );
+        l.lock();
+        locks.add( l );
+    }
+
+    private void unlock( List<Lock> locks )
     {
         for ( Lock writeLock : locks )
         {
@@ -676,7 +693,7 @@ public class LockingInstaller
 
     private void unlock( InstallRequest request )
     {
-        Set<Lock> locks = locked.get( request );
+        List<Lock> locks = locked.get( request );
         locked.remove( request );
         unlock( locks );
     }
