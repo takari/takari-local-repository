@@ -293,9 +293,12 @@ public class LockingInstaller
             boolean copy =
                 "pom".equals( artifact.getExtension() ) || srcFile.lastModified() != stagedFile.lastModified()
                     || srcFile.length() != stagedFile.length();
+            logger.debug( String.format( "compare:\n%s\n%s\n%s\n%s", srcFile.lastModified(), dstFile.lastModified(),
+                                         srcFile.length(), dstFile.length() ) );
 
             if ( copy )
             {
+                logger.debug( String.format( "install: %s -> %s", srcFile, stagedFile ) );
                 fileProcessor.copy( srcFile, stagedFile, null );
                 dstFile.setLastModified( srcFile.lastModified() );
             }
@@ -325,10 +328,12 @@ public class LockingInstaller
         {
             if ( metadata instanceof MergeableMetadata )
             {
+                logger.debug( String.format( "merge: %s -> %s", dstFile, stage( dstFile ) ) );
                 ( (MergeableMetadata) metadata ).merge( dstFile, stage( dstFile ) );
             }
             else
             {
+                logger.debug( String.format( "copy: %s -> %s", metadata.getFile(), stage( dstFile ) ) );
                 fileProcessor.copy( metadata.getFile(), stage( dstFile ), null );
             }
         }
@@ -347,6 +352,7 @@ public class LockingInstaller
         {
             for ( Artifact a : result.getArtifacts() )
             {
+                logger.debug( "promoting artifact: " + a );
                 File dstFile = null;
                 Exception exception = null;
                 try
@@ -358,10 +364,14 @@ public class LockingInstaller
                     mark( dstFile );
 
                     // no temporary -> unchanged src file, no error
+                    logger.debug( String.format( "move: %s -> %s", transFile, dstFile ) );
                     if ( transFile.exists() && !transFile.renameTo( dstFile ) )
                     {
+                        logger.debug( String.format( "copy: %s -> %s", transFile, dstFile ) );
                         fileProcessor.copy( transFile, dstFile, null );
+                        dstFile.setLastModified( transFile.lastModified() );
                     }
+                    logger.debug( "tstamp: " + dstFile.lastModified() );
 
                     lrm.add( session, registrations.get( a ) );
 
@@ -386,6 +396,7 @@ public class LockingInstaller
             }
             for ( Metadata m : result.getMetadata() )
             {
+                logger.debug( "promoting metadata: " + m );
                 File dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
                 Exception exception = null;
                 try
@@ -395,8 +406,10 @@ public class LockingInstaller
                     sanity( dstFile, transFile );
                     mark( dstFile );
 
+                    logger.debug( String.format( "move: %s -> %s", transFile, dstFile ) );
                     if ( !transFile.renameTo( dstFile ) )
                     {
+                        logger.debug( String.format( "copy: %s -> %s", transFile, dstFile ) );
                         fileProcessor.copy( transFile, dstFile, null );
                     }
                 }
@@ -428,6 +441,7 @@ public class LockingInstaller
     private void rollback( RepositorySystemSession session, InstallResult result )
         throws IOException, RepositoryException
     {
+        logger.debug( "Starting rollback for " + result );
         boolean failures = false;
 
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
