@@ -15,6 +15,8 @@ package org.sonatype.aether.extension.installer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -81,6 +83,9 @@ public class LockingInstaller
 
     private Map<InstallRequest, List<Lock>> locked =
         Collections.synchronizedMap( new HashMap<InstallRequest, List<Lock>>() );
+
+    private Map<InstallRequest, Map<String, FileLock>> filelocked =
+        Collections.synchronizedMap( new HashMap<InstallRequest, Map<String, FileLock>>() );
 
     private static final Comparator<MetadataGeneratorFactory> COMPARATOR = new Comparator<MetadataGeneratorFactory>()
     {
@@ -621,13 +626,8 @@ public class LockingInstaller
         }
     }
 
-    /**
-     * TODO use FileLock also (lock repo? single files? gid-directories?)
-     * 
-     * @param session
-     * @param request
-     */
     private synchronized void lockAll( RepositorySystemSession session, InstallRequest request )
+        throws InstallationException
     {
         if ( locked.containsKey( request ) )
         {
@@ -638,29 +638,85 @@ public class LockingInstaller
         Collection<Artifact> artifacts = request.getArtifacts();
         Collection<Metadata> metadata = request.getMetadata();
         List<Lock> locks = new LinkedList<Lock>();
+        Map<String, FileLock> filelocks = new HashMap<String, FileLock>();
 
         try
         {
             for ( Artifact a : artifacts )
             {
+                filelock( session, filelocks, a.getGroupId() );
                 lock( session, locks, a );
             }
             for ( Metadata m : metadata )
             {
+                filelock( session, filelocks, m.getGroupId() );
                 lock( session, locks, m );
             }
             locked.put( request, locks );
+            filelocked.put( request, filelocks );
         }
         catch ( RuntimeException t )
         {
             unlock( locks );
+            unlock( filelocks );
             throw t;
         }
     }
 
-    private void lock ( RepositorySystemSession session, InstallRequest request, Metadata m)
+    private void filelock( RepositorySystemSession session, InstallRequest request, String gid )
+        throws InstallationException
+    {
+        Map<String, FileLock> filelocks = filelocked.get( request );
+        filelock( session, filelocks, gid );
+
+    }
+
+    private void filelock( RepositorySystemSession session, Map<String, FileLock> map, String gid )
+        throws InstallationException
+    {
+        if ( !map.containsKey( gid ) )
+        {
+            File gidFile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_" + gid );
+            FileLock lock = null;
+            try
+            {
+                if ( !gidFile.exists() )
+                {
+                    fileProcessor.mkdirs( gidFile.getParentFile() );
+                    gidFile.createNewFile();
+                }
+                RandomAccessFile raf = null;
+                raf = new RandomAccessFile( gidFile, "rw" );
+                lock = raf.getChannel().lock();
+                map.put( gid, lock );
+            }
+            catch ( IOException e )
+            {
+                if ( lock != null )
+                {
+                    try
+                    {
+                        lock.release();
+                    }
+                    catch ( IOException e1 )
+                    {
+                        logger.debug( String.format( "Exception while releasing file-lock for '%s', file '%s'", gid,
+                                                     gidFile ), e1 );
+                    }
+                }
+                throw new InstallationException( "Could not file-lock " + gid, e );
+            }
+        }
+    }
+
+    /**
+     * Lock file for given metadata, internally and via {@link FileLock}.
+     */
+    private void lock( RepositorySystemSession session, InstallRequest request, Metadata m )
+        throws InstallationException
     {
         lock( session, locked.get( request ), m );
+        filelock( session, request, m.getGroupId() );
     }
 
     private void lock( RepositorySystemSession session, List<Lock> locks, Metadata m )
@@ -668,9 +724,7 @@ public class LockingInstaller
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
 
-        Lock l = lockManager.writeLock( file );
-        l.lock();
-        locks.add( l );
+        lock( locks, file );
     }
 
     private void lock( RepositorySystemSession session, List<Lock> locks, Artifact a )
@@ -678,6 +732,11 @@ public class LockingInstaller
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
 
+        lock( locks, file );
+    }
+
+    private void lock( List<Lock> locks, File file )
+    {
         Lock l = lockManager.writeLock( file );
         l.lock();
         locks.add( l );
@@ -691,11 +750,25 @@ public class LockingInstaller
         }
     }
 
+    private void unlock( Map<String, FileLock> filelocks )
+    {
+        for ( FileLock lock : filelocks.values() )
+        {
+            try
+            {
+                lock.release();
+            }
+            catch ( IOException e )
+            {
+                logger.debug( String.format( "Exception while releasing file-lock '%s'", lock ), e );
+            }
+        }
+    }
+
     private void unlock( InstallRequest request )
     {
-        List<Lock> locks = locked.get( request );
-        locked.remove( request );
-        unlock( locks );
+        unlock( locked.remove( request ) );
+        unlock( filelocked.remove( request ) );
     }
 
 }
