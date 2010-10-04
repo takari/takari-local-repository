@@ -81,12 +81,6 @@ public class LockingInstaller
     @Requirement
     private LockManager lockManager;
 
-    private Map<InstallRequest, List<Lock>> locked =
-        Collections.synchronizedMap( new HashMap<InstallRequest, List<Lock>>() );
-
-    private Map<InstallRequest, Map<String, FileLock>> filelocked =
-        Collections.synchronizedMap( new HashMap<InstallRequest, Map<String, FileLock>>() );
-
     private static final Comparator<MetadataGeneratorFactory> COMPARATOR = new Comparator<MetadataGeneratorFactory>()
     {
 
@@ -96,8 +90,6 @@ public class LockingInstaller
         }
 
     };
-
-    private Map<Artifact, LocalArtifactRegistration> registrations = new HashMap<Artifact, LocalArtifactRegistration>();
 
     public LockingInstaller()
     {
@@ -195,7 +187,9 @@ public class LockingInstaller
     public InstallResult install( RepositorySystemSession session, InstallRequest request )
         throws InstallationException
     {
-        lockAll( session, request );
+        InstallerContext ctx = new InstallerContext();
+
+        lockAll( session, request, ctx );
 
         InstallResult result = new InstallResult( request );
 
@@ -205,6 +199,7 @@ public class LockingInstaller
 
         IdentityHashMap<Metadata, Object> processedMetadata = new IdentityHashMap<Metadata, Object>();
 
+
         try
         {
             try
@@ -213,7 +208,7 @@ public class LockingInstaller
                 {
                     for ( Metadata metadata : generator.prepare( artifacts ) )
                     {
-                        lock( session, request, metadata );
+                        lock( session, request, metadata, ctx );
                         install( session, metadata );
                         processedMetadata.put( metadata, null );
                         result.addMetadata( metadata );
@@ -231,7 +226,7 @@ public class LockingInstaller
 
                     artifacts.set( i, artifact );
 
-                    install( session, artifact );
+                    install( session, artifact, ctx );
                     result.addArtifact( artifact );
                 }
 
@@ -239,7 +234,7 @@ public class LockingInstaller
                 {
                     for ( Metadata metadata : generator.finish( artifacts ) )
                     {
-                        lock( session, request, metadata );
+                        lock( session, request, metadata, ctx );
                         install( session, metadata );
                         processedMetadata.put( metadata, null );
                         result.addMetadata( metadata );
@@ -271,17 +266,17 @@ public class LockingInstaller
                 }
                 throw e;
             }
-            promote( session, result );
+            promote( session, result, ctx );
             return result;
         }
         finally
         {
             cleanup( session, result );
-            unlock( request );
+            unlock( request, ctx );
         }
     }
 
-    private void install( RepositorySystemSession session, Artifact artifact )
+    private void install( RepositorySystemSession session, Artifact artifact, InstallerContext ctx )
         throws InstallationException
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
@@ -310,7 +305,7 @@ public class LockingInstaller
                 logger.debug( "Skipped re-installing " + srcFile + " to " + dstFile + ", seems unchanged" );
             }
 
-            registrations.put( artifact, new LocalArtifactRegistration( artifact ) );
+            ctx.getRegistrations().put( artifact, new LocalArtifactRegistration( artifact ) );
         }
         catch ( Exception e )
         {
@@ -345,7 +340,7 @@ public class LockingInstaller
         }
     }
 
-    private void promote( RepositorySystemSession session, InstallResult result )
+    private void promote( RepositorySystemSession session, InstallResult result, InstallerContext ctx )
         throws InstallationException
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
@@ -359,10 +354,10 @@ public class LockingInstaller
                 try
                 {
                     dstFile = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
-                    File transFile = stage( a,dstFile );
+                    File transFile = stage( a, dstFile );
 
                     sanity( dstFile, transFile );
-                    mark( a,dstFile );
+                    mark( a, dstFile );
 
                     // no temporary -> unchanged src file, no error
                     if ( transFile.exists() && !transFile.renameTo( dstFile ) )
@@ -371,7 +366,7 @@ public class LockingInstaller
                         dstFile.setLastModified( transFile.lastModified() );
                     }
 
-                    lrm.add( session, registrations.get( a ) );
+                    lrm.add( session, ctx.getRegistrations().get( a ) );
 
                     if ( !localRepositoryMaintainers.isEmpty() )
                     {
@@ -398,10 +393,10 @@ public class LockingInstaller
                 Exception exception = null;
                 try
                 {
-                    File transFile = stage( m,dstFile );
+                    File transFile = stage( m, dstFile );
 
                     sanity( dstFile, transFile );
-                    mark( m,dstFile );
+                    mark( m, dstFile );
 
                     if ( !transFile.renameTo( dstFile ) )
                     {
@@ -614,9 +609,12 @@ public class LockingInstaller
         }
     }
 
-    private synchronized void lockAll( RepositorySystemSession session, InstallRequest request )
+    private synchronized void lockAll( RepositorySystemSession session, InstallRequest request, InstallerContext ctx )
         throws InstallationException
     {
+        Map<InstallRequest, List<Lock>> locked = ctx.getLocks();
+        Map<InstallRequest, Map<String, FileLock>> filelocked = ctx.getFilelocks();
+
         if ( locked.containsKey( request ) )
         {
             throw new IllegalStateException( String.format( "Given InstallRequest is already processing (%s, %s) ",
@@ -651,10 +649,10 @@ public class LockingInstaller
         }
     }
 
-    private void filelock( RepositorySystemSession session, InstallRequest request, String gid )
+    private void filelock( RepositorySystemSession session, InstallRequest request, String gid, InstallerContext ctx )
         throws InstallationException
     {
-        Map<String, FileLock> filelocks = filelocked.get( request );
+        Map<String, FileLock> filelocks = ctx.getFilelocks().get( request );
         filelock( session, filelocks, gid );
 
     }
@@ -689,8 +687,7 @@ public class LockingInstaller
                     catch ( IOException e1 )
                     {
                         logger.debug( String.format( "Exception while cleaning up on error (trying to release file-lock for '%s', fIle '%s')",
-                                                     gid,
-                                                     gidFile ), e1 );
+                                                     gid, gidFile ), e1 );
                     }
                 }
                 throw new InstallationException( "Could not file-lock " + gid, e );
@@ -701,11 +698,11 @@ public class LockingInstaller
     /**
      * Lock file for given metadata, internally and via {@link FileLock}.
      */
-    private void lock( RepositorySystemSession session, InstallRequest request, Metadata m )
+    private void lock( RepositorySystemSession session, InstallRequest request, Metadata m, InstallerContext ctx )
         throws InstallationException
     {
-        lock( session, locked.get( request ), m );
-        filelock( session, request, m.getGroupId() );
+        lock( session, ctx.getLocks().get( request ), m );
+        filelock( session, request, m.getGroupId(), ctx );
     }
 
     private void lock( RepositorySystemSession session, List<Lock> locks, Metadata m )
@@ -754,10 +751,36 @@ public class LockingInstaller
         }
     }
 
-    private void unlock( InstallRequest request )
+    private void unlock( InstallRequest request, InstallerContext ctx )
     {
-        unlock( locked.remove( request ) );
-        unlock( filelocked.remove( request ) );
+        unlock( ctx.getLocks().remove( request ) );
+        unlock( ctx.getFilelocks().remove( request ) );
+    }
+
+    private class InstallerContext
+    {
+        private Map<InstallRequest, List<Lock>> locks = new HashMap<InstallRequest, List<Lock>>();
+    
+        private Map<InstallRequest, Map<String, FileLock>> filelocks =
+            new HashMap<InstallRequest, Map<String, FileLock>>();
+    
+        private Map<Artifact, LocalArtifactRegistration> registrations =
+            new HashMap<Artifact, LocalArtifactRegistration>();
+    
+        public Map<InstallRequest, List<Lock>> getLocks()
+        {
+            return locks;
+        }
+    
+        public Map<InstallRequest, Map<String, FileLock>> getFilelocks()
+        {
+            return filelocks;
+        }
+    
+        public Map<Artifact, LocalArtifactRegistration> getRegistrations()
+        {
+            return registrations;
+        }
     }
 
 }
