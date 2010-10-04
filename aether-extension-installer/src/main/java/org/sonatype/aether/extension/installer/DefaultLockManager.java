@@ -58,7 +58,8 @@ public class DefaultLockManager
         }
         catch ( IOException e )
         {
-            // best effort - use given file
+            // best effort - use absolute file
+            file = file.getAbsoluteFile();
         }
 
         synchronized ( locks )
