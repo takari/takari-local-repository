@@ -1,6 +1,5 @@
 package org.sonatype.aether.extension.installer;
 
-
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
  *
@@ -47,6 +46,7 @@ import org.sonatype.aether.test.util.impl.StubMetadata;
 import edu.umd.cs.mtc.MultithreadedTestCase;
 import edu.umd.cs.mtc.TestFramework;
 
+@SuppressWarnings( "unused" )
 public class LockingInstallerTest
 {
 
@@ -91,37 +91,19 @@ public class LockingInstallerTest
         localMetadataFile = new File( session.getLocalRepository().getBasedir(), localMetadataPath );
         lockManager = new DefaultLockManager();
         installer = new LockingInstaller().setFileProcessor( TestFileProcessor.INSTANCE ).setLockManager( lockManager );
-        logger = new Logger()
-        {
-
-            public boolean isDebugEnabled()
-            {
-                return true;
-            }
-
-            public void debug( String msg, Throwable error )
-            {
-                debug( msg );
-                error.printStackTrace();
-
-            }
-
-            public void debug( String msg )
-            {
-                System.err.println( msg );
-            }
-        };
-        installer.setLogger( logger );
+        // logger = new SyserrLogger();
+        // installer.setLogger( logger );
         request = new InstallRequest();
         listener = new RecordingRepositoryListener();
         session.setRepositoryListener( listener );
-        TestFileUtils.deleteDir( session.getLocalRepository().getBasedir() );
+        TestFileUtils.delete( session.getLocalRepository().getBasedir() );
     }
 
     @After
     public void teardown()
+        throws IOException
     {
-        TestFileUtils.deleteDir( session.getLocalRepository().getBasedir() );
+        TestFileUtils.delete( session.getLocalRepository().getBasedir() );
     }
 
     @Test
@@ -344,7 +326,7 @@ public class LockingInstallerTest
     {
         request.addArtifact( artifact );
         installer.install( session, request );
-    
+
         installer.setFileProcessor( new DefaultFileProcessor()
         {
             @Override
@@ -354,7 +336,7 @@ public class LockingInstallerTest
                 throw new IOException( "copy called" );
             }
         } );
-    
+
         request = new InstallRequest();
         request.addArtifact( artifact );
         long lastModified = localArtifactFile.lastModified();
@@ -369,27 +351,26 @@ public class LockingInstallerTest
         throws InstallationException
     {
         artifact.getFile().setLastModified( artifact.getFile().lastModified() - 60000 );
-    
+
         request.addArtifact( artifact );
-    
+
         installer.install( session, request );
-    
+
         assertEquals( "artifact timestamp was not set to src file", artifact.getFile().lastModified(),
                       localArtifactFile.lastModified() );
-    
+
         request = new InstallRequest();
-    
+
         request.addArtifact( artifact );
-    
+
         artifact.getFile().setLastModified( artifact.getFile().lastModified() - 60000 );
-    
+
         installer.install( session, request );
-    
+
         assertEquals( "artifact timestamp was not set to src file", artifact.getFile().lastModified(),
                       localArtifactFile.lastModified() );
     }
 
-    @SuppressWarnings( "unused" )
     @Test
     public void testConcurrentInstall()
         throws Throwable
@@ -431,7 +412,6 @@ public class LockingInstallerTest
         } );
     }
 
-    @SuppressWarnings( "unused" )
     @Test
     public void testStaging()
         throws Throwable
@@ -528,5 +508,76 @@ public class LockingInstallerTest
                 }
             }
         } );
+    }
+
+    @Test
+    public void testLockingArtifact()
+        throws InterruptedException, IOException, InstallationException
+    {
+        int wait = 500;
+        ExternalFileLock ext = new ExternalFileLock();
+        request.addArtifact( artifact );
+
+        File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
+        Process p = ext.lockFile( lockfile.getAbsolutePath(), wait );
+        long start = System.currentTimeMillis();
+
+        // give external lock time to initialize
+        Thread.sleep( 100 );
+
+        installer.install( session, request );
+
+        long end = System.currentTimeMillis();
+        String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
+        assertTrue( message, end > start + 500 );
+    }
+
+    @Test
+    public void testLockingMetadata()
+        throws InstallationException, InterruptedException, IOException
+    {
+        int wait = 500;
+        ExternalFileLock ext = new ExternalFileLock();
+        request.addMetadata( metadata );
+
+        File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
+        Process p = ext.lockFile( lockfile.getAbsolutePath(), wait );
+
+        long start = System.currentTimeMillis();
+
+        // give external lock time to initialize
+        Thread.sleep( 100 );
+
+        installer.install( session, request );
+
+        long end = System.currentTimeMillis();
+
+        String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
+        assertTrue( message, end > start + 500 );
+    }
+
+    /**
+     * @author Benjamin Hanzelmann
+     *
+     */
+    private final class SyserrLogger
+        implements Logger
+    {
+        public boolean isDebugEnabled()
+        {
+            return true;
+        }
+    
+        public void debug( String msg, Throwable error )
+        {
+            debug( msg );
+            error.printStackTrace();
+    
+        }
+    
+        public void debug( String msg )
+        {
+            System.err.println( msg );
+        }
     }
 }
