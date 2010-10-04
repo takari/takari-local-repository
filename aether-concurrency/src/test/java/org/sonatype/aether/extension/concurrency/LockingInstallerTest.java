@@ -1,4 +1,4 @@
-package org.sonatype.aether.extension.installer;
+package org.sonatype.aether.extension.concurrency;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.
@@ -26,8 +26,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonatype.aether.RepositoryEvent;
 import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.extension.concurrency.DefaultLockManager;
-import org.sonatype.aether.extension.concurrency.LockingInstaller;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.impl.internal.DefaultFileProcessor;
 import org.sonatype.aether.installation.InstallRequest;

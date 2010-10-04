@@ -1,10 +1,9 @@
-package org.sonatype.aether.extension.installer;
+package org.sonatype.aether.extension.concurrency;
 
 import java.io.File;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sonatype.aether.extension.concurrency.DefaultLockManager;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
