@@ -28,9 +28,9 @@ under the License.
     <version>1.8-SNAPSHOT</version>
   </parent>
 
-  <artifactId>aether-extension-installer</artifactId>
+  <artifactId>aether-concurrency</artifactId>
 
-  <name>Aether :: Extension :: Installer</name>
+  <name>Aether :: Concurrency Extensions</name>
   <description>
       This extension for Aether contains an installer that is safe for concurrent use.
   </description>
