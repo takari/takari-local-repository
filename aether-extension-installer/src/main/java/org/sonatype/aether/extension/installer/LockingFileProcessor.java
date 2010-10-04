@@ -134,7 +134,8 @@ public class LockingFileProcessor
         RandomAccessFile out = null;
         boolean writeAcquired = false;
         boolean readAcquired = false;
-        FileLock lock = null;
+        FileLock targetLock = null;
+        FileLock srcLock = null;
         try
         {
             readLock.lock();
@@ -142,7 +143,18 @@ public class LockingFileProcessor
             writeLock.lock();
             writeAcquired = true;
 
-            in = new RandomAccessFile( src, "r" );
+            boolean lockSrc;
+            String mode;
+            // FileLock is only possible if src is writable
+            if ( ( lockSrc = src.canWrite() ) )
+            {
+                mode = "rw";
+            }
+            else
+            {
+                mode = "r";
+            }
+            in = new RandomAccessFile( src, mode );
 
             File targetDir = target.getParentFile();
             if ( targetDir != null )
@@ -150,10 +162,16 @@ public class LockingFileProcessor
                 mkdirs( targetDir );
             }
 
+            FileChannel srcChannel = in.getChannel();
+            if ( lockSrc )
+            {
+                srcLock = srcChannel.lock();
+            }
+
             out = new RandomAccessFile( target, "rw" );
             FileChannel outChannel = out.getChannel();
 
-            lock = outChannel.lock();
+            targetLock = outChannel.lock();
 
             out.setLength( 0 );
 
@@ -163,16 +181,16 @@ public class LockingFileProcessor
                 realChannel = new ProgressingChannel( outChannel, listener );
             }
 
-            return copy( in.getChannel(), realChannel );
+            return copy( srcChannel, realChannel );
         }
         finally
         {
             close( in );
             close( out );
 
-            release( lock );
+            release( targetLock );
+            release( srcLock );
 
-            // in case of file not found on src, we do not hold the lock
             if ( readAcquired )
             {
                 readLock.unlock();

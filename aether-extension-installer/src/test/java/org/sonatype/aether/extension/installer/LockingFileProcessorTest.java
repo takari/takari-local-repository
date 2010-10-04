@@ -13,8 +13,7 @@ package org.sonatype.aether.extension.installer;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,8 +67,10 @@ public class LockingFileProcessorTest {
 	}
 
 	@After
-	public void teardown() {
-		TestFileUtils.deleteDir(targetDir);
+    public void teardown()
+        throws IOException
+    {
+        TestFileUtils.delete( targetDir );
 		fileProcessor = null;
 	}
 
@@ -436,6 +437,56 @@ public class LockingFileProcessorTest {
         fileProcessor.copy( file, target, null );
         assertTrue( "empty file was not copied", target.exists() && target.length() == 0 );
         target.delete();
+    }
+
+    @Test
+    public void testExternalLockOnSrc()
+        throws InterruptedException, IOException
+    {
+        int wait = 500;
+        ExternalFileLock ext = new ExternalFileLock();
+
+        File srcFile = TestFileUtils.createTempFile( "lockedFile" );
+        File targetFile = TestFileUtils.createTempFile( "" );
+
+        ext.lockFile( srcFile.getAbsolutePath(), wait );
+
+        long start = System.currentTimeMillis();
+
+        // give external lock time to initialize
+        Thread.sleep( 100 );
+
+        fileProcessor.copy( srcFile, targetFile, null );
+
+        long end = System.currentTimeMillis();
+
+        String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
+        assertTrue( message, end > start + 500 );
+    }
+    
+    @Test
+    public void testExternalLockOnTarget()
+        throws InterruptedException, IOException
+    {
+        int wait = 500;
+        ExternalFileLock ext = new ExternalFileLock();
+
+        File srcFile = TestFileUtils.createTempFile( "lockedFile" );
+        File targetFile = TestFileUtils.createTempFile( "" );
+
+        ext.lockFile( targetFile.getAbsolutePath(), wait );
+
+        long start = System.currentTimeMillis();
+
+        // give external lock time to initialize
+        Thread.sleep( 100 );
+
+        fileProcessor.copy( srcFile, targetFile, null );
+
+        long end = System.currentTimeMillis();
+
+        String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
+        assertTrue( message, end > start + 500 );
     }
 
 }
