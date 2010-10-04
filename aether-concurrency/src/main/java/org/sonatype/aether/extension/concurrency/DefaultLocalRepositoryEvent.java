@@ -1,4 +1,4 @@
-package org.sonatype.aether.extension.installer;
+package org.sonatype.aether.extension.concurrency;
 
 /*
  * Copyright (c) 2010 Sonatype, Inc. All rights reserved.

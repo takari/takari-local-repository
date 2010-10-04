@@ -24,6 +24,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonatype.aether.extension.concurrency.DefaultLockManager;
+import org.sonatype.aether.extension.concurrency.LockingFileProcessor;
 import org.sonatype.aether.spi.io.FileProcessor.ProgressListener;
 import org.sonatype.aether.test.util.TestFileUtils;
 
