@@ -26,6 +26,8 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor;
+import org.sonatype.aether.spi.locator.Service;
+import org.sonatype.aether.spi.locator.ServiceLocator;
 
 /**
  * A utility class helping with file-based operations.
@@ -34,12 +36,22 @@ import org.sonatype.aether.spi.io.FileProcessor;
  */
 @Component( role = FileProcessor.class, hint = "default" )
 public class LockingFileProcessor
-    implements FileProcessor
+    implements FileProcessor, Service
 {
 	
 	@Requirement
 	private LockManager lockManager;
 
+
+    public LockingFileProcessor()
+    {
+        // enable default constructor
+    }
+
+    public LockingFileProcessor( LockManager lockManager )
+    {
+        setLockManager( lockManager );
+    }
 
     private static void close( Closeable closeable )
     {
@@ -324,9 +336,23 @@ public class LockingFileProcessor
         }
     }
 
+    /**
+     * Sets the LockManager to use.
+     * 
+     * @param lockManager The LockManager to use, may not be {@code null}.
+     */
     public void setLockManager( LockManager lockManager )
     {
+        if ( lockManager == null )
+        {
+            throw new IllegalArgumentException( "LockManager may not be null." );
+        }
         this.lockManager = lockManager;
+    }
+
+    public void initService( ServiceLocator locator )
+    {
+        setLockManager( locator.getService( LockManager.class ) );
     }
 
 }
