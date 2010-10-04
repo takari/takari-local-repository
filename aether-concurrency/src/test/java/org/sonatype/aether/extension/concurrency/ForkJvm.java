@@ -15,7 +15,9 @@ package org.sonatype.aether.extension.concurrency;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -118,7 +120,16 @@ public class ForkJvm
     private static File getResourceRoot( URL url, String resource )
     {
         String str = url.getPath();
-        return new File( str.replace( resource, "" ) );
+        str = str.replace( resource, "" );
+        try
+        {
+            str = URLDecoder.decode( str, "UTF-8" );
+        }
+        catch ( UnsupportedEncodingException e )
+        {
+            throw new IllegalStateException( "JVM broken", e );
+        }
+        return new File( str );
     }
 
     public Process run( String mainClass )
