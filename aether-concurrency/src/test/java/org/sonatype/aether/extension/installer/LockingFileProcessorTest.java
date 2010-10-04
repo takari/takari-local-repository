@@ -15,8 +15,10 @@ package org.sonatype.aether.extension.installer;
 
 import static org.junit.Assert.*;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -451,7 +453,7 @@ public class LockingFileProcessorTest {
         File srcFile = TestFileUtils.createTempFile( "lockedFile" );
         File targetFile = TestFileUtils.createTempFile( "" );
 
-        ext.lockFile( srcFile.getAbsolutePath(), wait );
+        Process p = ext.lockFile( srcFile.getAbsolutePath(), wait );
 
         long start = System.currentTimeMillis();
 
@@ -463,6 +465,20 @@ public class LockingFileProcessorTest {
         long end = System.currentTimeMillis();
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
+
+        message += "\n>>> STDOUT";
+        BufferedReader stdout = new BufferedReader( new InputStreamReader( p.getInputStream() ) );
+        String line;
+        while ( ( line = stdout.readLine() ) != null )
+        {
+            message += "\n" + line;
+        }
+        message += "\n>>> STDERR";
+        BufferedReader stderr = new BufferedReader( new InputStreamReader( p.getErrorStream() ) );
+        while ( ( line = stderr.readLine() ) != null )
+        {
+            message += "\n" + line;
+        }
         assertTrue( message, end > start + 500 );
     }
     
