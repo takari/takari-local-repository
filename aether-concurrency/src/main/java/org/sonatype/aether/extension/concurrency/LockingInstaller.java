@@ -743,6 +743,7 @@ public class LockingInstaller
             try
             {
                 lock.release();
+                lock.channel().close();
             }
             catch ( IOException e )
             {
