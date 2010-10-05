@@ -35,42 +35,52 @@ import edu.umd.cs.mtc.TestFramework;
 /**
  * @author Benjamin Hanzelmann
  */
-public class LockingFileProcessorTest {
+public class LockingFileProcessorTest
+{
 
-	private static final class BlockingProgressListener implements
-			ProgressListener {
-		private Object lock;
+    private static final class BlockingProgressListener
+        implements ProgressListener
+    {
+        private Object lock;
 
-		public BlockingProgressListener(Object lock) {
-			this.lock = lock;
-		}
+        public BlockingProgressListener( Object lock )
+        {
+            this.lock = lock;
+        }
 
-		public void progressed(ByteBuffer buffer) throws IOException {
-			synchronized (lock) {
-				try {
-					lock.wait();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-					throw new IOException(e.getMessage());
-				}
-			}
-		}
-	}
+        public void progressed( ByteBuffer buffer )
+            throws IOException
+        {
+            synchronized ( lock )
+            {
+                try
+                {
+                    lock.wait();
+                }
+                catch ( InterruptedException e )
+                {
+                    e.printStackTrace();
+                    throw new IOException( e.getMessage() );
+                }
+            }
+        }
+    }
 
-	private File targetDir;
+    private File targetDir;
 
-	private LockingFileProcessor fileProcessor;
+    private LockingFileProcessor fileProcessor;
 
     private Process process;
 
-	@Before
-	public void setup() {
-		targetDir = new File("target/test-FileUtils");
-		fileProcessor = new LockingFileProcessor();
-		fileProcessor.setLockManager(new DefaultLockManager());
-	}
+    @Before
+    public void setup()
+    {
+        targetDir = new File( "target/test-FileUtils" );
+        fileProcessor = new LockingFileProcessor();
+        fileProcessor.setLockManager( new DefaultLockManager() );
+    }
 
-	@After
+    @After
     public void teardown()
         throws IOException, InterruptedException
     {
@@ -80,360 +90,438 @@ public class LockingFileProcessorTest {
         }
         TestFileUtils.delete( targetDir );
         fileProcessor = null;
-	}
-
-	@Test
-	public void testCopy() throws IOException {
-		File file = TestFileUtils.createTempFile("testCopy\nasdf");
-		File target = new File(targetDir, "testCopy.txt");
-
-		fileProcessor.copy(file, target, null);
-
-		assertContent(file, "testCopy\nasdf".getBytes("UTF-8"));
-
-		file.delete();
-	}
-
-	private void assertContent(File file, byte[] content) throws IOException {
-		RandomAccessFile in = null;
-		try {
-			in = new RandomAccessFile(file, "r");
-			byte[] buffer = new byte[(int) in.length()];
-			in.readFully(buffer);
-			assertArrayEquals("content did not match", content, buffer);
-		} finally {
-			in.close();
-		}
-	}
-
-	@Test
-	public void testOverwrite() throws IOException {
-		File file = TestFileUtils.createTempFile("testCopy\nasdf");
-
-		for (int i = 0; i < 5; i++) {
-			File target = new File(targetDir, "testCopy.txt");
-			fileProcessor.copy(file, target, null);
-			assertContent(file, "testCopy\nasdf".getBytes("UTF-8"));
-		}
-
-		file.delete();
-	}
-
-	@SuppressWarnings("unused")
-	@Test
-	public void testBlockingCopyExistingWriteLockOnSrc() throws Throwable {
-		TestFramework.runOnce(new MultithreadedTestCase() {
-			private File locked;
-
-			private File unlocked;
-
-			private Object lock;
-
-			private BlockingProgressListener listener;
-
-			public void thread1() {
-				try {
-					fileProcessor.copy(
-							TestFileUtils.createTempFile("contents"), locked,
-							listener);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-				assertTick(2);
-			}
-
-			public void thread2() {
-				waitForTick(1);
-				try {
-					fileProcessor.copy(locked, unlocked, null);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-
-				assertTick(2);
-			}
-
-			public void thread3() {
-				waitForTick(2);
-				synchronized (lock) {
-					lock.notifyAll();
-				}
-
-			}
-
-			@Override
-			public void initialize() {
-				lock = new Object();
-				listener = new BlockingProgressListener(lock);
-
-				try {
-					locked = TestFileUtils.createTempFile("some content");
-					unlocked = TestFileUtils.createTempFile("another file");
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("could not create temp files");
-				}
-			}
-		});
-	}
-
-	@SuppressWarnings("unused")
-	@Test
-	public void testBlockingCopyExistingWriteLockOnTarget() throws Throwable {
-		TestFramework.runOnce(new MultithreadedTestCase() {
-			private File locked;
-
-			private File unlocked;
-
-			private Object lock;
-
-			private ProgressListener listener;
-
-			public void thread1() {
-				try {
-					fileProcessor.copy(
-							TestFileUtils.createTempFile("contents"), locked,
-							listener);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-				assertTick(2);
-			}
-
-			public void thread2() {
-				waitForTick(1);
-
-				try {
-					fileProcessor.copy(unlocked, locked, null);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-
-				assertTick(2);
-			}
-
-			public void thread3() {
-				waitForTick(2);
-				synchronized (lock) {
-					lock.notifyAll();
-				}
-			}
-
-			@Override
-			public void initialize() {
-				lock = new Object();
-				listener = new BlockingProgressListener(lock);
-
-				try {
-					locked = TestFileUtils.createTempFile("some content");
-					unlocked = TestFileUtils.createTempFile("another file");
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("could not create temp files");
-				}
-			}
-
-		});
-
-	}
-
-	@SuppressWarnings("unused")
-	@Test
-	public void testBlockingCopyExistingReadLockOnTarget() throws Throwable {
-		TestFramework.runOnce(new MultithreadedTestCase() {
-			private File locked;
-
-			private File unlocked;
-
-			private Object lock;
-
-			private BlockingProgressListener listener;
-
-			public void thread1() {
-				try {
-					fileProcessor.copy(locked,
-							TestFileUtils.createTempFile("contents"), listener);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-				assertTick(2);
-			}
-
-			public void thread2() {
-				waitForTick(1);
-
-				try {
-					fileProcessor.copy(unlocked, locked, null);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-
-				assertTick(2);
-			}
-
-			public void thread3() {
-				waitForTick(2);
-				synchronized (lock) {
-					lock.notifyAll();
-				}
-
-			}
-
-			@Override
-			public void initialize() {
-				lock = new Object();
-				listener = new BlockingProgressListener(lock);
-
-				try {
-					locked = TestFileUtils.createTempFile("some content");
-					unlocked = TestFileUtils.createTempFile("another file");
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("could not create temp files");
-				}
-			}
-		});
-	}
-
-	@SuppressWarnings("unused")
-	@Test
-	public void testDoNotBlockExistingReadLockOnSrc() throws Throwable {
-		TestFramework.runOnce(new MultithreadedTestCase() {
-			private File locked;
-
-			private File unlocked;
-
-			private Object lock;
-
-			private ReadLock readLock;
-
-			private ProgressListener listener;
-
-			public void thread1() {
-				try {
-					fileProcessor.copy(locked,
-							TestFileUtils.createTempFile("contents"), listener);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-				assertTick(2);
-			}
-
-			public void thread2() {
-				waitForTick(1);
-
-				try {
-					fileProcessor.copy(locked, unlocked, null);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-
-				assertTick(1);
-				waitForTick(2);
-			}
-
-			public void thread3() {
-				waitForTick(2);
-				synchronized (lock) {
-					lock.notifyAll();
-				}
-
-			}
-
-			@Override
-			public void initialize() {
-				lock = new Object();
-				listener = new BlockingProgressListener(lock);
-
-				try {
-					locked = TestFileUtils.createTempFile("some content");
-					unlocked = TestFileUtils.createTempFile("another file");
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("could not create temp files");
-				}
-			}
-		});
-	}
-
-	@SuppressWarnings("unused")
-	@Test
-	public void testLockCanonicalFile() throws Throwable {
-		TestFramework.runOnce(new MultithreadedTestCase() {
-			private File locked;
-
-			private File unlocked;
-
-			private Object lock;
-
-			private ProgressListener listener;
-
-			public void thread1() {
-				try {
-					fileProcessor.copy(locked,
-							TestFileUtils.createTempFile("contents"), listener);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-				assertTick(2);
-			}
-
-			public void thread2() {
-				waitForTick(1);
-
-				try {
-					fileProcessor.copy(unlocked, locked, null);
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("testBlockingCopy failed (write lock on src file): "
-							+ e.getMessage());
-				}
-
-				assertTick(2);
-			}
-
-			public void thread3() {
-				waitForTick(2);
-				synchronized (lock) {
-					lock.notifyAll();
-				}
-
-			}
-
-			@Override
-			public void initialize() {
-				lock = new Object();
-				listener = new BlockingProgressListener(lock);
-
-				try {
-					locked = TestFileUtils.createTempFile("some content");
-					unlocked = TestFileUtils.createTempFile("another file");
-				} catch (IOException e) {
-					e.printStackTrace();
-					fail("could not create temp files");
-				}
-			}
-		});
-
-	}
+    }
+
+    @Test
+    public void testCopy()
+        throws IOException
+    {
+        File file = TestFileUtils.createTempFile( "testCopy\nasdf" );
+        File target = new File( targetDir, "testCopy.txt" );
+
+        fileProcessor.copy( file, target, null );
+
+        assertContent( file, "testCopy\nasdf".getBytes( "UTF-8" ) );
+
+        file.delete();
+    }
+
+    private void assertContent( File file, byte[] content )
+        throws IOException
+    {
+        RandomAccessFile in = null;
+        try
+        {
+            in = new RandomAccessFile( file, "r" );
+            byte[] buffer = new byte[(int) in.length()];
+            in.readFully( buffer );
+            assertArrayEquals( "content did not match", content, buffer );
+        }
+        finally
+        {
+            in.close();
+        }
+    }
+
+    @Test
+    public void testOverwrite()
+        throws IOException
+    {
+        File file = TestFileUtils.createTempFile( "testCopy\nasdf" );
+
+        for ( int i = 0; i < 5; i++ )
+        {
+            File target = new File( targetDir, "testCopy.txt" );
+            fileProcessor.copy( file, target, null );
+            assertContent( file, "testCopy\nasdf".getBytes( "UTF-8" ) );
+        }
+
+        file.delete();
+    }
+
+    @SuppressWarnings( "unused" )
+    @Test
+    public void testBlockingCopyExistingWriteLockOnSrc()
+        throws Throwable
+    {
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            private File locked;
+
+            private File unlocked;
+
+            private Object lock;
+
+            private BlockingProgressListener listener;
+
+            public void thread1()
+            {
+                try
+                {
+                    fileProcessor.copy( TestFileUtils.createTempFile( "contents" ), locked, listener );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+                assertTick( 2 );
+            }
+
+            public void thread2()
+            {
+                waitForTick( 1 );
+                try
+                {
+                    fileProcessor.copy( locked, unlocked, null );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+
+                assertTick( 2 );
+            }
+
+            public void thread3()
+            {
+                waitForTick( 2 );
+                synchronized ( lock )
+                {
+                    lock.notifyAll();
+                }
+
+            }
+
+            @Override
+            public void initialize()
+            {
+                lock = new Object();
+                listener = new BlockingProgressListener( lock );
+
+                try
+                {
+                    locked = TestFileUtils.createTempFile( "some content" );
+                    unlocked = TestFileUtils.createTempFile( "another file" );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "could not create temp files" );
+                }
+            }
+        } );
+    }
+
+    @SuppressWarnings( "unused" )
+    @Test
+    public void testBlockingCopyExistingWriteLockOnTarget()
+        throws Throwable
+    {
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            private File locked;
+
+            private File unlocked;
+
+            private Object lock;
+
+            private ProgressListener listener;
+
+            public void thread1()
+            {
+                try
+                {
+                    fileProcessor.copy( TestFileUtils.createTempFile( "contents" ), locked, listener );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+                assertTick( 2 );
+            }
+
+            public void thread2()
+            {
+                waitForTick( 1 );
+
+                try
+                {
+                    fileProcessor.copy( unlocked, locked, null );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+
+                assertTick( 2 );
+            }
+
+            public void thread3()
+            {
+                waitForTick( 2 );
+                synchronized ( lock )
+                {
+                    lock.notifyAll();
+                }
+            }
+
+            @Override
+            public void initialize()
+            {
+                lock = new Object();
+                listener = new BlockingProgressListener( lock );
+
+                try
+                {
+                    locked = TestFileUtils.createTempFile( "some content" );
+                    unlocked = TestFileUtils.createTempFile( "another file" );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "could not create temp files" );
+                }
+            }
+
+        } );
+
+    }
+
+    @SuppressWarnings( "unused" )
+    @Test
+    public void testBlockingCopyExistingReadLockOnTarget()
+        throws Throwable
+    {
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            private File locked;
+
+            private File unlocked;
+
+            private Object lock;
+
+            private BlockingProgressListener listener;
+
+            public void thread1()
+            {
+                try
+                {
+                    fileProcessor.copy( locked, TestFileUtils.createTempFile( "contents" ), listener );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+                assertTick( 2 );
+            }
+
+            public void thread2()
+            {
+                waitForTick( 1 );
+
+                try
+                {
+                    fileProcessor.copy( unlocked, locked, null );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+
+                assertTick( 2 );
+            }
+
+            public void thread3()
+            {
+                waitForTick( 2 );
+                synchronized ( lock )
+                {
+                    lock.notifyAll();
+                }
+
+            }
+
+            @Override
+            public void initialize()
+            {
+                lock = new Object();
+                listener = new BlockingProgressListener( lock );
+
+                try
+                {
+                    locked = TestFileUtils.createTempFile( "some content" );
+                    unlocked = TestFileUtils.createTempFile( "another file" );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "could not create temp files" );
+                }
+            }
+        } );
+    }
+
+    @SuppressWarnings( "unused" )
+    @Test
+    public void testDoNotBlockExistingReadLockOnSrc()
+        throws Throwable
+    {
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            private File locked;
+
+            private File unlocked;
+
+            private Object lock;
+
+            private ReadLock readLock;
+
+            private ProgressListener listener;
+
+            public void thread1()
+            {
+                try
+                {
+                    fileProcessor.copy( locked, TestFileUtils.createTempFile( "contents" ), listener );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+                assertTick( 2 );
+            }
+
+            public void thread2()
+            {
+                waitForTick( 1 );
+
+                try
+                {
+                    fileProcessor.copy( locked, unlocked, null );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+
+                assertTick( 1 );
+                waitForTick( 2 );
+            }
+
+            public void thread3()
+            {
+                waitForTick( 2 );
+                synchronized ( lock )
+                {
+                    lock.notifyAll();
+                }
+
+            }
+
+            @Override
+            public void initialize()
+            {
+                lock = new Object();
+                listener = new BlockingProgressListener( lock );
+
+                try
+                {
+                    locked = TestFileUtils.createTempFile( "some content" );
+                    unlocked = TestFileUtils.createTempFile( "another file" );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "could not create temp files" );
+                }
+            }
+        } );
+    }
+
+    @SuppressWarnings( "unused" )
+    @Test
+    public void testLockCanonicalFile()
+        throws Throwable
+    {
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            private File locked;
+
+            private File unlocked;
+
+            private Object lock;
+
+            private ProgressListener listener;
+
+            public void thread1()
+            {
+                try
+                {
+                    fileProcessor.copy( locked, TestFileUtils.createTempFile( "contents" ), listener );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+                assertTick( 2 );
+            }
+
+            public void thread2()
+            {
+                waitForTick( 1 );
+
+                try
+                {
+                    fileProcessor.copy( unlocked, locked, null );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                }
+
+                assertTick( 2 );
+            }
+
+            public void thread3()
+            {
+                waitForTick( 2 );
+                synchronized ( lock )
+                {
+                    lock.notifyAll();
+                }
+
+            }
+
+            @Override
+            public void initialize()
+            {
+                lock = new Object();
+                listener = new BlockingProgressListener( lock );
+
+                try
+                {
+                    locked = TestFileUtils.createTempFile( "some content" );
+                    unlocked = TestFileUtils.createTempFile( "another file" );
+                }
+                catch ( IOException e )
+                {
+                    e.printStackTrace();
+                    fail( "could not create temp files" );
+                }
+            }
+        } );
+
+    }
 
     @Test
     public void testCopyEmptyFile()
@@ -486,7 +574,7 @@ public class LockingFileProcessorTest {
         assertTrue( message, end > start + 500 );
 
     }
-    
+
     @Test
     public void testExternalLockOnTarget()
         throws InterruptedException, IOException
