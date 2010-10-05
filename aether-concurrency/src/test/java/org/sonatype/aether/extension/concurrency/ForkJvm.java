@@ -157,7 +157,6 @@ public class ForkJvm
         ProcessBuilder builder = new ProcessBuilder( cmd );
         builder.directory( workingDirectory );
         builder.redirectErrorStream( true );
-        System.err.println( builder.command() );
         Process process = builder.start();
 
         return process;
