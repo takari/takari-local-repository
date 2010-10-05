@@ -177,7 +177,8 @@ public class LockingFileProcessor
             FileChannel srcChannel = in.getChannel();
             if ( lockSrc )
             {
-                srcLock = srcChannel.lock();
+                // shared lock for reading -> writers will use exclusive lock
+                srcLock = srcChannel.lock( 0, Long.MAX_VALUE, true );
             }
 
             out = new RandomAccessFile( target, "rw" );

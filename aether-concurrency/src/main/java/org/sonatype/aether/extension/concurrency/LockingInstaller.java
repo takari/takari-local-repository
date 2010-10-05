@@ -662,7 +662,7 @@ public class LockingInstaller
     {
         if ( !map.containsKey( gid ) )
         {
-            File gidFile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_" + gid );
+            File gidFile = gidFile( session, gid );
             FileLock lock = null;
             try
             {
@@ -756,6 +756,11 @@ public class LockingInstaller
     {
         unlock( ctx.getLocks().remove( request ) );
         unlock( ctx.getFilelocks().remove( request ) );
+    }
+
+    private File gidFile( RepositorySystemSession session, String gid )
+    {
+        return new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_" + gid );
     }
 
     private class InstallerContext
