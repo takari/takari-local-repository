@@ -74,6 +74,8 @@ public class LockingInstallerTest
 
     private File localMetadataFile;
 
+    private Process process;
+
     @Before
     public void setup()
         throws IOException
@@ -101,8 +103,12 @@ public class LockingInstallerTest
 
     @After
     public void teardown()
-        throws IOException
+        throws IOException, InterruptedException
     {
+        if ( process != null )
+        {
+            process.waitFor();
+        }
         TestFileUtils.delete( session.getLocalRepository().getBasedir() );
     }
 
@@ -519,7 +525,7 @@ public class LockingInstallerTest
         request.addArtifact( artifact );
 
         File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
-        Process p = ext.lockFile( lockfile.getAbsolutePath(), wait );
+        process = ext.lockFile( lockfile.getAbsolutePath(), wait );
         long start = System.currentTimeMillis();
 
         // give external lock time to initialize
@@ -541,7 +547,7 @@ public class LockingInstallerTest
         request.addMetadata( metadata );
 
         File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
-        Process p = ext.lockFile( lockfile.getAbsolutePath(), wait );
+        process = ext.lockFile( lockfile.getAbsolutePath(), wait );
 
         long start = System.currentTimeMillis();
 

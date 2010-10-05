@@ -61,6 +61,8 @@ public class LockingFileProcessorTest {
 
 	private LockingFileProcessor fileProcessor;
 
+    private Process process;
+
 	@Before
 	public void setup() {
 		targetDir = new File("target/test-FileUtils");
@@ -70,10 +72,14 @@ public class LockingFileProcessorTest {
 
 	@After
     public void teardown()
-        throws IOException
+        throws IOException, InterruptedException
     {
+        if ( process != null )
+        {
+            process.waitFor();
+        }
         TestFileUtils.delete( targetDir );
-		fileProcessor = null;
+        fileProcessor = null;
 	}
 
 	@Test
@@ -451,7 +457,7 @@ public class LockingFileProcessorTest {
         File srcFile = TestFileUtils.createTempFile( "lockedFile" );
         File targetFile = TestFileUtils.createTempFile( "" );
 
-        Process p = ext.lockFile( srcFile.getAbsolutePath(), wait );
+        process = ext.lockFile( srcFile.getAbsolutePath(), wait );
 
         long start = System.currentTimeMillis();
 
@@ -465,19 +471,20 @@ public class LockingFileProcessorTest {
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
 
         message += "\n>>> STDOUT";
-        BufferedReader stdout = new BufferedReader( new InputStreamReader( p.getInputStream() ) );
+        BufferedReader stdout = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
         String line;
         while ( ( line = stdout.readLine() ) != null )
         {
             message += "\n" + line;
         }
         message += "\n>>> STDERR";
-        BufferedReader stderr = new BufferedReader( new InputStreamReader( p.getErrorStream() ) );
+        BufferedReader stderr = new BufferedReader( new InputStreamReader( process.getErrorStream() ) );
         while ( ( line = stderr.readLine() ) != null )
         {
             message += "\n" + line;
         }
         assertTrue( message, end > start + 500 );
+
     }
     
     @Test
@@ -490,7 +497,7 @@ public class LockingFileProcessorTest {
         File srcFile = TestFileUtils.createTempFile( "lockedFile" );
         File targetFile = TestFileUtils.createTempFile( "" );
 
-        ext.lockFile( targetFile.getAbsolutePath(), wait );
+        process = ext.lockFile( targetFile.getAbsolutePath(), wait );
 
         long start = System.currentTimeMillis();
 
