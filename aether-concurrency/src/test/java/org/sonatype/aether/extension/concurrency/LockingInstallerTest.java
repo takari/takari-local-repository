@@ -482,7 +482,6 @@ public class LockingInstallerTest
             {
                 try
                 {
-                    System.err.println( request.getArtifacts() );
                     installer.install( session, request );
                 }
                 catch ( InstallationException e )
