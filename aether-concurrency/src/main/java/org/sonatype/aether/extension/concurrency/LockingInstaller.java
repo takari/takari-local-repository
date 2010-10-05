@@ -510,11 +510,14 @@ public class LockingInstaller
     {
         if ( file.exists() && stage( ctx, file ).exists() )
         {
-            boolean renamed = file.renameTo( backupFile( ctx, file ) );
+            File backupFile = backupFile( ctx, file );
+            boolean renamed = file.renameTo( backupFile );
 
             if ( !renamed )
             {
-                throw new IOException( "could not backup " + file.getAbsolutePath() );
+                logger.debug( String.format( "Could not rename %s to %s, copying instead.", file,
+                                             backupFile ) );
+                fileProcessor.copy( file, backupFile( ctx, file ), null );
             }
         }
         else
