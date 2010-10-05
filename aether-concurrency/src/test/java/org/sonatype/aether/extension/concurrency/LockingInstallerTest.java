@@ -107,10 +107,12 @@ public class LockingInstallerTest
     {
         if ( process != null )
         {
+            ForkJvm.flush( process );
             process.waitFor();
         }
         TestFileUtils.delete( session.getLocalRepository().getBasedir() );
     }
+
 
     @Test
     public void testSuccessfulInstall()

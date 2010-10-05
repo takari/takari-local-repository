@@ -56,7 +56,9 @@ public class ExternalFileLock
     {
         addClassPathEntry( this.getClass() );
         setParameters( path, String.valueOf( wait ) );
-        return run( this.getClass().getName() );
+        Process p = run( this.getClass().getName() );
+        p.getOutputStream().close();
+        return p;
     }
 
 }

@@ -15,10 +15,8 @@ package org.sonatype.aether.extension.concurrency;
 
 import static org.junit.Assert.*;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -86,6 +84,7 @@ public class LockingFileProcessorTest
     {
         if ( process != null )
         {
+            ForkJvm.flush( process );
             process.waitFor();
         }
         TestFileUtils.delete( targetDir );
@@ -558,19 +557,6 @@ public class LockingFileProcessorTest
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
 
-        message += "\n>>> STDOUT";
-        BufferedReader stdout = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
-        String line;
-        while ( ( line = stdout.readLine() ) != null )
-        {
-            message += "\n" + line;
-        }
-        message += "\n>>> STDERR";
-        BufferedReader stderr = new BufferedReader( new InputStreamReader( process.getErrorStream() ) );
-        while ( ( line = stderr.readLine() ) != null )
-        {
-            message += "\n" + line;
-        }
         assertTrue( message, end > start + 500 );
 
     }

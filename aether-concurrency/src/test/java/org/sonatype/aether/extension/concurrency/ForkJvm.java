@@ -13,8 +13,10 @@ package org.sonatype.aether.extension.concurrency;
  * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
  */
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -181,6 +183,18 @@ public class ForkJvm
     public void setParameters( String... parameters )
     {
         this.parameters = Arrays.asList( parameters );
+    }
+
+    public static void flush( Process p )
+        throws IOException
+    {
+        BufferedReader r = new BufferedReader( new InputStreamReader( p.getInputStream() ) );
+        String line;
+        while ( ( line = r.readLine() ) != null )
+        {
+            System.out.println( line );
+        }
+        r.close();
     }
 
 }
