@@ -32,9 +32,11 @@ import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.RepositoryException;
 import org.sonatype.aether.RepositoryListener;
 import org.sonatype.aether.RepositorySystemSession;
+import org.sonatype.aether.RepositoryEvent.EventType;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.impl.Installer;
+import org.sonatype.aether.impl.LocalRepositoryEvent;
 import org.sonatype.aether.impl.LocalRepositoryMaintainer;
 import org.sonatype.aether.impl.MetadataGenerator;
 import org.sonatype.aether.impl.MetadataGeneratorFactory;
@@ -370,7 +372,9 @@ public class LockingInstaller
 
                     if ( !localRepositoryMaintainers.isEmpty() )
                     {
-                        DefaultLocalRepositoryEvent event = new DefaultLocalRepositoryEvent( session, a, dstFile );
+                        DefaultLocalRepositoryEvent event =
+                            new DefaultLocalRepositoryEvent( LocalRepositoryEvent.EventType.ARTIFACT_INSTALLED,
+                                                             session, a, dstFile );
                         for ( LocalRepositoryMaintainer maintainer : localRepositoryMaintainers )
                         {
                             maintainer.artifactInstalled( event );
@@ -565,7 +569,8 @@ public class LockingInstaller
         RepositoryListener listener = session.getRepositoryListener();
         if ( listener != null )
         {
-            DefaultRepositoryEvent event = new DefaultRepositoryEvent( session, artifact );
+            DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.ARTIFACT_INSTALLING, session );
+            event.setArtifact( artifact );
             event.setRepository( session.getLocalRepositoryManager().getRepository() );
             event.setFile( dstFile );
             listener.artifactInstalling( event );
@@ -578,7 +583,8 @@ public class LockingInstaller
         RepositoryListener listener = session.getRepositoryListener();
         if ( listener != null )
         {
-            DefaultRepositoryEvent event = new DefaultRepositoryEvent( session, artifact );
+            DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.ARTIFACT_INSTALLED, session );
+            event.setArtifact( artifact );
             event.setRepository( session.getLocalRepositoryManager().getRepository() );
             event.setFile( dstFile );
             event.setException( exception );
@@ -591,7 +597,8 @@ public class LockingInstaller
         RepositoryListener listener = session.getRepositoryListener();
         if ( listener != null )
         {
-            DefaultRepositoryEvent event = new DefaultRepositoryEvent( session, metadata );
+            DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.METADATA_INSTALLING, session );
+            event.setMetadata( metadata );
             event.setRepository( session.getLocalRepositoryManager().getRepository() );
             event.setFile( dstFile );
             listener.metadataInstalling( event );
@@ -604,7 +611,8 @@ public class LockingInstaller
         RepositoryListener listener = session.getRepositoryListener();
         if ( listener != null )
         {
-            DefaultRepositoryEvent event = new DefaultRepositoryEvent( session, metadata );
+            DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.METADATA_INSTALLED, session );
+            event.setMetadata( metadata );
             event.setRepository( session.getLocalRepositoryManager().getRepository() );
             event.setFile( dstFile );
             event.setException( exception );
