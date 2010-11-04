@@ -538,7 +538,7 @@ public class LockingFileProcessorTest
     public void testExternalLockOnSrc()
         throws InterruptedException, IOException
     {
-        int wait = 500;
+        int wait = 1500;
         ExternalFileLock ext = new ExternalFileLock();
 
         File srcFile = TestFileUtils.createTempFile( "lockedFile" );
@@ -549,7 +549,7 @@ public class LockingFileProcessorTest
         long start = System.currentTimeMillis();
 
         // give external lock time to initialize
-        Thread.sleep( 100 );
+        Thread.sleep( 500 );
 
         fileProcessor.copy( srcFile, targetFile, null );
 
@@ -557,7 +557,7 @@ public class LockingFileProcessorTest
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
 
-        assertTrue( message, end > start + 500 );
+        assertTrue( message, end > start + ( wait - 100 ) );
 
     }
 
@@ -565,7 +565,7 @@ public class LockingFileProcessorTest
     public void testExternalLockOnTarget()
         throws InterruptedException, IOException
     {
-        int wait = 500;
+        int wait = 1500;
         ExternalFileLock ext = new ExternalFileLock();
 
         File srcFile = TestFileUtils.createTempFile( "lockedFile" );
@@ -576,14 +576,14 @@ public class LockingFileProcessorTest
         long start = System.currentTimeMillis();
 
         // give external lock time to initialize
-        Thread.sleep( 100 );
+        Thread.sleep( 500 );
 
         fileProcessor.copy( srcFile, targetFile, null );
 
         long end = System.currentTimeMillis();
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
-        assertTrue( message, end > start + 500 );
+        assertTrue( message, end > start + ( wait - 100 ) );
     }
 
 }

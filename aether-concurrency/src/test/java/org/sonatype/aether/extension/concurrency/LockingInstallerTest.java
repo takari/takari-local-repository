@@ -521,7 +521,7 @@ public class LockingInstallerTest
     public void testLockingArtifact()
         throws InterruptedException, IOException, InstallationException
     {
-        int wait = 500;
+        int wait = 1500;
         ExternalFileLock ext = new ExternalFileLock();
         request.addArtifact( artifact );
 
@@ -530,20 +530,20 @@ public class LockingInstallerTest
         long start = System.currentTimeMillis();
 
         // give external lock time to initialize
-        Thread.sleep( 100 );
+        Thread.sleep( 500 );
 
         installer.install( session, request );
 
         long end = System.currentTimeMillis();
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
-        assertTrue( message, end > start + 500 );
+        assertTrue( message, end > start + ( wait - 100 ) );
     }
 
     @Test
     public void testLockingMetadata()
         throws InstallationException, InterruptedException, IOException
     {
-        int wait = 500;
+        int wait = 1500;
         ExternalFileLock ext = new ExternalFileLock();
         request.addMetadata( metadata );
 
@@ -553,14 +553,14 @@ public class LockingInstallerTest
         long start = System.currentTimeMillis();
 
         // give external lock time to initialize
-        Thread.sleep( 100 );
+        Thread.sleep( 500 );
 
         installer.install( session, request );
 
         long end = System.currentTimeMillis();
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
-        assertTrue( message, end > start + 500 );
+        assertTrue( message, end > start + ( wait - 100 ) );
     }
 
     /**

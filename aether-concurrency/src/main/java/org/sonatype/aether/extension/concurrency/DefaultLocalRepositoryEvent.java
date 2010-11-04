@@ -18,7 +18,6 @@ import java.io.File;
 import org.sonatype.aether.RepositorySystemSession;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.impl.LocalRepositoryEvent;
-import org.sonatype.aether.impl.LocalRepositoryEvent.EventType;
 import org.sonatype.aether.repository.LocalRepository;
 
 /**
