@@ -173,13 +173,15 @@ public class LockingFileProcessor
             if ( lockSrc )
             {
                 // shared lock for reading -> writers will use exclusive lock
-                srcLock = srcChannel.lock( 0, Long.MAX_VALUE, true );
+                // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
+                srcLock = srcChannel.lock( 0, srcChannel.size(), true );
             }
 
             out = new RandomAccessFile( target, "rw" );
             FileChannel outChannel = out.getChannel();
 
-            targetLock = outChannel.lock();
+            // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
+            targetLock = outChannel.lock( 0, outChannel.size(), false );
 
             out.setLength( 0 );
 
@@ -272,7 +274,7 @@ public class LockingFileProcessor
             writeLock.lock();
             writeAcquired = true;
             out.setLength( 0 );
-            lock = channel.lock();
+            lock = channel.lock( 0, channel.size(), false );
             if ( data == null )
             {
                 channel.truncate( 0 );

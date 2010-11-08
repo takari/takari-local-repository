@@ -24,10 +24,10 @@ import java.util.Map;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
+import org.sonatype.aether.RepositoryEvent.EventType;
 import org.sonatype.aether.RepositoryException;
 import org.sonatype.aether.RepositoryListener;
 import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.RepositoryEvent.EventType;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.impl.Installer;
@@ -667,9 +667,9 @@ public class LockingInstaller
                     fileProcessor.mkdirs( gidFile.getParentFile() );
                     gidFile.createNewFile();
                 }
-                RandomAccessFile raf = null;
-                raf = new RandomAccessFile( gidFile, "rw" );
-                lock = raf.getChannel().lock();
+                RandomAccessFile raf = new RandomAccessFile( gidFile, "rw" );
+                // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
+                lock = raf.getChannel().lock( 0, 0, false );
                 map.put( gid, lock );
             }
             catch ( IOException e )
