@@ -274,7 +274,7 @@ public class LockingFileProcessor
             writeLock.lock();
             writeAcquired = true;
             out.setLength( 0 );
-            lock = channel.lock( 0, channel.size(), false );
+            lock = channel.lock( 0, Math.max( 1, channel.size() ), false );
             if ( data == null )
             {
                 channel.truncate( 0 );
