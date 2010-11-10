@@ -669,7 +669,7 @@ public class LockingInstaller
                 }
                 RandomAccessFile raf = new RandomAccessFile( gidFile, "rw" );
                 // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
-                lock = raf.getChannel().lock( 0, 0, false );
+                lock = raf.getChannel().lock( 0, 1, false );
                 map.put( gid, lock );
             }
             catch ( IOException e )

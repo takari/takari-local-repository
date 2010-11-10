@@ -530,13 +530,13 @@ public class LockingFileProcessorTest
     }
 
     @Test
-    public void testExternalLockOnSrc()
+    public void testExternalLockOnEmptySource()
         throws InterruptedException, IOException
     {
         int wait = 1500;
         ExternalFileLock ext = new ExternalFileLock();
 
-        File srcFile = TestFileUtils.createTempFile( "lockedFile" );
+        File srcFile = TestFileUtils.createTempFile( "" );
         File targetFile = TestFileUtils.createTempFile( "" );
 
         process = ext.lockFile( srcFile.getAbsolutePath(), wait );
@@ -557,13 +557,13 @@ public class LockingFileProcessorTest
     }
 
     @Test
-    public void testExternalLockOnTarget()
+    public void testExternalLockOnEmptyTarget()
         throws InterruptedException, IOException
     {
         int wait = 1500;
         ExternalFileLock ext = new ExternalFileLock();
 
-        File srcFile = TestFileUtils.createTempFile( "lockedFile" );
+        File srcFile = TestFileUtils.createTempFile( "" );
         File targetFile = TestFileUtils.createTempFile( "" );
 
         process = ext.lockFile( targetFile.getAbsolutePath(), wait );
