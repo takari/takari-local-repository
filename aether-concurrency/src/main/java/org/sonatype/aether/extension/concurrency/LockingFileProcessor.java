@@ -268,6 +268,8 @@ public class LockingFileProcessor
         boolean writeAcquired = false;
         try
         {
+            mkdirs( file.getParentFile() );
+
             out = new RandomAccessFile( file, "rw" );
             channel = out.getChannel();
 
