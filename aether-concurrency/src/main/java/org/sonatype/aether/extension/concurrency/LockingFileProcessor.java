@@ -306,6 +306,8 @@ public class LockingFileProcessor
         if ( !source.renameTo( target ) )
         {
             copy( source, target, null );
+
+            source.delete();
         }
     }
 
