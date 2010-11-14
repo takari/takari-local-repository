@@ -16,14 +16,18 @@ import java.io.File;
 public interface LockManager
 {
 
-    Lock writeLock( File target );
+    Lock writeLock( File target )
+        throws LockingException;
 
-    Lock readLock( File target );
+    Lock readLock( File target )
+        throws LockingException;
 
     public interface Lock
     {
-        void lock();
+        void lock()
+            throws LockingException;
 
-        void unlock();
+        void unlock()
+            throws LockingException;
     }
 }

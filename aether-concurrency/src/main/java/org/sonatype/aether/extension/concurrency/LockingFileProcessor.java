@@ -150,17 +150,7 @@ public class LockingFileProcessor
             writeLock.lock();
             writeAcquired = true;
 
-            boolean lockSrc;
-            String mode;
-            // FileLock is only possible if src is writable
-            if ( ( lockSrc = src.canWrite() ) )
-            {
-                mode = "rw";
-            }
-            else
-            {
-                mode = "r";
-            }
+            String mode = "r";
             in = new RandomAccessFile( src, mode );
 
             File targetDir = target.getParentFile();
@@ -170,18 +160,9 @@ public class LockingFileProcessor
             }
 
             FileChannel srcChannel = in.getChannel();
-            if ( lockSrc )
-            {
-                // shared lock for reading -> writers will use exclusive lock
-                // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
-                srcLock = srcChannel.lock( 0, Math.max( 1, srcChannel.size() ), true );
-            }
 
             out = new RandomAccessFile( target, "rw" );
             FileChannel outChannel = out.getChannel();
-
-            // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
-            targetLock = outChannel.lock( 0, Math.max( 1, outChannel.size() ), false );
 
             out.setLength( 0 );
 
