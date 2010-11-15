@@ -193,7 +193,6 @@ public class DefaultFileLockManager
             manager.remove( file );
         }
 
-        @Override
         public FileChannel channel()
         {
             return lock.channel();
