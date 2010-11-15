@@ -121,13 +121,13 @@ public class LockingFileProcessorTest
     public void testOverwrite()
         throws IOException
     {
-        File file = TestFileUtils.createTempFile( "testCopy\nasdf" );
+        File file = TestFileUtils.createTempFile( "testOverwrite\nasdf" );
 
         for ( int i = 0; i < 5; i++ )
         {
-            File target = new File( targetDir, "testCopy.txt" );
+            File target = new File( targetDir, "testOverwrite.txt" );
             fileProcessor.copy( file, target, null );
-            assertContent( file, "testCopy\nasdf".getBytes( "UTF-8" ) );
+            assertContent( file, "testOverwrite\nasdf".getBytes( "UTF-8" ) );
         }
 
         file.delete();
