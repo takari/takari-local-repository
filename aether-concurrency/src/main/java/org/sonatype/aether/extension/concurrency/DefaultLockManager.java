@@ -34,7 +34,6 @@ public class DefaultLockManager
     private Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
     public Lock readLock( File file )
-        throws LockingException
     {
         ReentrantReadWriteLock lock = lookup( file, false );
 
@@ -42,14 +41,12 @@ public class DefaultLockManager
     }
 
     public Lock writeLock( File file )
-        throws LockingException
     {
         ReentrantReadWriteLock lock = lookup( file, true );
         return new DefaultLock( this, lock, file, true );
     }
 
     private ReentrantReadWriteLock lookup( File file, boolean write )
-        throws LockingException
     {
         ReentrantReadWriteLock lock = null;
 
@@ -80,7 +77,6 @@ public class DefaultLockManager
             else
             {
                 c.incrementAndGet();
-                FileLock fileLock = filelocks.get( file );
             }
         }
         return lock;

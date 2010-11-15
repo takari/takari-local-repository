@@ -31,13 +31,11 @@ public class FileLockManager
     private Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
     public Lock readLock( File file )
-        throws LockingException
     {
         return new DefaultFileLock( this, file, false );
     }
 
     public Lock writeLock( File file )
-        throws LockingException
     {
         return new DefaultFileLock( this, file, true );
     }
@@ -66,7 +64,7 @@ public class FileLockManager
                     throw new LockingException( "Could not unlock " + file.getAbsolutePath(), e );
                 }
 
-                filelocks.put( file, fileLock);
+                filelocks.put( file, fileLock );
             }
 
             AtomicInteger c = count.get( file );
@@ -147,8 +145,11 @@ public class FileLockManager
                 try
                 {
                     FileLock lock = filelocks.remove( file );
-                    lock.release();
-                    lock.channel().close();
+                    if ( lock.channel().isOpen() )
+                    {
+                        lock.release();
+                        lock.channel().close();
+                    }
                 }
                 catch ( IOException e )
                 {
