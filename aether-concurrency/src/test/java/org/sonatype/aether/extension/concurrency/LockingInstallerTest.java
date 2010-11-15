@@ -565,7 +565,6 @@ public class LockingInstallerTest
 
     /**
      * @author Benjamin Hanzelmann
-     *
      */
     private final class SyserrLogger
         implements Logger
@@ -574,17 +573,33 @@ public class LockingInstallerTest
         {
             return true;
         }
-    
+
         public void debug( String msg, Throwable error )
         {
             debug( msg );
             error.printStackTrace();
-    
         }
-    
+
         public void debug( String msg )
         {
             System.err.println( msg );
         }
+
+        public boolean isWarnEnabled()
+        {
+            return true;
+        }
+
+        public void warn( String msg, Throwable error )
+        {
+            warn( msg );
+            error.printStackTrace();
+        }
+
+        public void warn( String msg )
+        {
+            System.err.println( msg );
+        }
     }
+
 }
