@@ -18,10 +18,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.plexus.component.annotations.Component;
-import org.sonatype.aether.extension.concurrency.FileLockManager.AetherFileLock;
+import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLock;
 
 /**
- * A lock manager using {@link AetherFileLock}s for inter-process locking.
+ * A lock manager using {@link ExternalFileLock}s for inter-process locking.
  * 
  * @author Benjamin Hanzelmann
  */
@@ -33,12 +33,12 @@ public class DefaultFileLockManager
 
     private Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
-    public AetherFileLock readLock( File file )
+    public ExternalFileLock readLock( File file )
     {
         return new DefaultFileLock( this, file, false );
     }
 
-    public AetherFileLock writeLock( File file )
+    public ExternalFileLock writeLock( File file )
     {
         return new DefaultFileLock( this, file, true );
     }
@@ -157,7 +157,7 @@ public class DefaultFileLockManager
     }
 
     public static class DefaultFileLock
-        implements AetherFileLock
+        implements ExternalFileLock
     {
         private DefaultFileLockManager manager;
 

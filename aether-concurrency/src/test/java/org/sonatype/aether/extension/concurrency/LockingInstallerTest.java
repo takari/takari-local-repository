@@ -522,7 +522,7 @@ public class LockingInstallerTest
         throws InterruptedException, IOException, InstallationException
     {
         int wait = 1500;
-        ExternalFileLock ext = new ExternalFileLock();
+        ExternalProcessFileLock ext = new ExternalProcessFileLock();
         request.addArtifact( artifact );
 
         File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
@@ -544,7 +544,7 @@ public class LockingInstallerTest
         throws InstallationException, InterruptedException, IOException
     {
         int wait = 1500;
-        ExternalFileLock ext = new ExternalFileLock();
+        ExternalProcessFileLock ext = new ExternalProcessFileLock();
         request.addMetadata( metadata );
 
         File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );

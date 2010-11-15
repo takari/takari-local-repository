@@ -534,7 +534,7 @@ public class LockingFileProcessorTest
         throws InterruptedException, IOException
     {
         int wait = 1500;
-        ExternalFileLock ext = new ExternalFileLock();
+        ExternalProcessFileLock ext = new ExternalProcessFileLock();
 
         File srcFile = TestFileUtils.createTempFile( "" );
         File targetFile = TestFileUtils.createTempFile( "" );
@@ -561,7 +561,7 @@ public class LockingFileProcessorTest
         throws InterruptedException, IOException
     {
         int wait = 1500;
-        ExternalFileLock ext = new ExternalFileLock();
+        ExternalProcessFileLock ext = new ExternalProcessFileLock();
 
         File srcFile = TestFileUtils.createTempFile( "" );
         File targetFile = TestFileUtils.createTempFile( "" );

@@ -14,21 +14,21 @@ import java.nio.channels.FileChannel;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 
 /**
- * A LockManager holding external locks, locking files between OS processes (e.g. via {@link AetherFileLock}.
+ * A LockManager holding external locks, locking files between OS processes (e.g. via {@link ExternalFileLock}.
  * 
  * @author Benjamin Hanzelmann
  */
 public interface FileLockManager
 {
 
-    public interface AetherFileLock
+    public interface ExternalFileLock
         extends Lock
     {
         FileChannel channel();
     }
 
-    AetherFileLock readLock( File target );
+    ExternalFileLock readLock( File target );
 
-    AetherFileLock writeLock( File target );
+    ExternalFileLock writeLock( File target );
 
 }

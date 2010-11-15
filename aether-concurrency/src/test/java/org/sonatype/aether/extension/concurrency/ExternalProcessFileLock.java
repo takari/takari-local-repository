@@ -18,7 +18,7 @@ import java.nio.channels.FileLock;
  * @author Benjamin Hanzelmann
  *
  */
-public class ExternalFileLock
+public class ExternalProcessFileLock
     extends ForkJvm
 {
 
