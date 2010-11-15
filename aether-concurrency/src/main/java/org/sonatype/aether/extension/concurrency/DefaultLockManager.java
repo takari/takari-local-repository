@@ -21,6 +21,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import org.codehaus.plexus.component.annotations.Component;
 
 /**
+ * A lock manager using {@link ReentrantReadWriteLock}s to lock files.
+ * 
  * @author Benjamin Hanzelmann
  */
 @Component( role = LockManager.class )

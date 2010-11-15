@@ -9,8 +9,11 @@ package org.sonatype.aether.extension.concurrency;
  *******************************************************************************/
 
 import java.io.File;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
+ * A LockManager holding locks internal to the running VM (e.g. via {@link ReentrantReadWriteLock}.
+ * 
  * @author Benjamin Hanzelmann
  */
 public interface LockManager

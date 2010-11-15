@@ -19,6 +19,7 @@ import java.nio.channels.WritableByteChannel;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
+import org.sonatype.aether.extension.concurrency.FileLockManager.AetherFileLock;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor;
 import org.sonatype.aether.spi.locator.Service;
@@ -125,8 +126,8 @@ public class LockingFileProcessor
         Lock readLock = lockManager.readLock( src );
         Lock writeLock = lockManager.writeLock( target );
 
-        Lock srcLock = fileLockManager.readLock( src );
-        Lock targetLock = fileLockManager.writeLock( target );
+        AetherFileLock srcLock = fileLockManager.readLock( src );
+        AetherFileLock targetLock = fileLockManager.writeLock( target );
 
         RandomAccessFile in = null;
         RandomAccessFile out = null;
@@ -152,12 +153,12 @@ public class LockingFileProcessor
             srcLock.lock();
             targetLock.lock();
 
-            FileChannel srcChannel = in.getChannel();
+            FileChannel srcChannel = srcLock.channel();// in.getChannel();
 
             out = new RandomAccessFile( target, "rw" );
             out.setLength( 0 );
 
-            FileChannel outChannel = out.getChannel();
+            FileChannel outChannel = targetLock.channel();// out.getChannel();
 
             WritableByteChannel realChannel = outChannel;
             if ( listener != null )
@@ -237,7 +238,7 @@ public class LockingFileProcessor
         throws IOException
     {
         Lock writeLock = lockManager.writeLock( file );
-        Lock lock = fileLockManager.writeLock( file );
+        AetherFileLock lock = fileLockManager.writeLock( file );
 
         RandomAccessFile out = null;
         FileChannel channel = null;
@@ -247,7 +248,7 @@ public class LockingFileProcessor
             mkdirs( file.getParentFile() );
 
             out = new RandomAccessFile( file, "rw" );
-            channel = out.getChannel();
+            channel = lock.channel(); // out.getChannel();
 
             writeLock.lock();
             writeAcquired = true;
@@ -275,7 +276,7 @@ public class LockingFileProcessor
         }
     }
 
-    private static void release( Lock lock )
+    private static void release( AetherFileLock lock )
     {
         try
         {

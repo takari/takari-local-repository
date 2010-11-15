@@ -18,8 +18,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.plexus.component.annotations.Component;
+import org.sonatype.aether.extension.concurrency.FileLockManager.AetherFileLock;
 
 /**
+ * A lock manager using {@link AetherFileLock}s for inter-process locking.
+ * 
  * @author Benjamin Hanzelmann
  */
 @Component( role = FileLockManager.class )
@@ -30,12 +33,12 @@ public class DefaultFileLockManager
 
     private Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
-    public Lock readLock( File file )
+    public AetherFileLock readLock( File file )
     {
         return new DefaultFileLock( this, file, false );
     }
 
-    public Lock writeLock( File file )
+    public AetherFileLock writeLock( File file )
     {
         return new DefaultFileLock( this, file, true );
     }
@@ -49,7 +52,8 @@ public class DefaultFileLockManager
         {
             if ( ( fileLock = filelocks.get( file ) ) == null )
             {
-                filelocks.put( file, newFileLock( file, write ) );
+                fileLock = newFileLock( file, write );
+                filelocks.put( file, fileLock );
             }
             else if ( write && fileLock.isShared() )
             {
@@ -57,7 +61,7 @@ public class DefaultFileLockManager
                 {
                     filelocks.remove( file ).release();
                     fileLock.channel().close();
-                    fileLock = newFileLock( file, write );
+                    fileLock = fileLock;
                 }
                 catch ( IOException e )
                 {
@@ -101,7 +105,15 @@ public class DefaultFileLockManager
             raf = new RandomAccessFile( file, mode );
             channel = raf.getChannel();
 
-            return newFileLock( channel, write );
+            try
+            {
+                // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
+                return channel.lock( 0, Math.max( 1, channel.size() ), !write );
+            }
+            catch ( IOException e )
+            {
+                throw new LockingException( "Could not lock " + channel.toString(), e );
+            }
         }
         catch ( LockingException e )
         {
@@ -116,20 +128,6 @@ public class DefaultFileLockManager
         catch ( IOException e )
         {
             throw new LockingException( "Could not lock " + file.getAbsolutePath(), e );
-        }
-    }
-
-    public FileLock newFileLock( FileChannel channel, boolean write )
-        throws LockingException
-    {
-        try
-        {
-            // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
-            return channel.lock( 0, Math.max( 1, channel.size() ), !write );
-        }
-        catch ( IOException e )
-        {
-            throw new LockingException( "Could not lock " + channel.toString(), e );
         }
     }
 
@@ -160,13 +158,15 @@ public class DefaultFileLockManager
     }
 
     public static class DefaultFileLock
-        implements Lock
+        implements AetherFileLock
     {
         private DefaultFileLockManager manager;
 
         private File file;
 
         private boolean write;
+
+        private FileLock lock;
 
         private DefaultFileLock( DefaultFileLockManager manager, File file, boolean write )
         {
@@ -184,13 +184,19 @@ public class DefaultFileLockManager
         private void lookup()
             throws LockingException
         {
-            manager.lookup( file, write );
+            lock = manager.lookup( file, write );
         }
 
         public void unlock()
             throws LockingException
         {
             manager.remove( file );
+        }
+
+        @Override
+        public FileChannel channel()
+        {
+            return lock.channel();
         }
 
     }

@@ -11,8 +11,9 @@ package org.sonatype.aether.extension.concurrency;
 import java.io.IOException;
 
 /**
+ * Signals that a locking operation has gone wrong.
+ * 
  * @author Benjamin Hanzelmann
- *
  */
 public class LockingException
     extends IOException
