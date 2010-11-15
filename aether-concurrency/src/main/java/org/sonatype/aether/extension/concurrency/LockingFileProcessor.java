@@ -144,11 +144,7 @@ public class LockingFileProcessor
             String mode = "r";
             in = new RandomAccessFile( src, mode );
 
-            File targetDir = target.getParentFile();
-            if ( targetDir != null )
-            {
-                mkdirs( targetDir );
-            }
+            mkdirs( target.getParentFile() );
 
             srcLock.lock();
             targetLock.lock();
