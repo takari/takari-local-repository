@@ -34,18 +34,18 @@ public class LockingFileProcessor
     implements FileProcessor, Service
 {
 
-    @Requirement( hint = "default" )
+    @Requirement
     private LockManager lockManager;
 
-    @Requirement( hint = "nio" )
-    private LockManager fileLockManager;
+    @Requirement
+    private FileLockManager fileLockManager;
 
     public LockingFileProcessor()
     {
         // enable default constructor
     }
 
-    public LockingFileProcessor( LockManager lockManager, LockManager fileLockManager )
+    public LockingFileProcessor( LockManager lockManager, FileLockManager fileLockManager )
     {
         setLockManager( lockManager );
         setFileLockManager( fileLockManager );
@@ -357,7 +357,7 @@ public class LockingFileProcessor
      * 
      * @param lockManager The LockManager to use, may not be {@code null}.
      */
-    public void setFileLockManager( LockManager lockManager )
+    public void setFileLockManager( FileLockManager lockManager )
     {
         if ( lockManager == null )
         {
@@ -368,17 +368,8 @@ public class LockingFileProcessor
 
     public void initService( ServiceLocator locator )
     {
-        for ( LockManager lm : locator.getServices( LockManager.class ) )
-        {
-            if ( lm instanceof IFileLockManager && fileLockManager == null )
-            {
-                setFileLockManager( lm );
-            }
-            else if ( lockManager == null )
-            {
-                setLockManager( lm );
-            }
-        }
+        setLockManager( locator.getService( LockManager.class ) );
+        setFileLockManager( locator.getService( FileLockManager.class ) );
     }
 
 }

@@ -74,11 +74,11 @@ public class LockingInstaller
     @Requirement( role = MetadataGeneratorFactory.class )
     private List<MetadataGeneratorFactory> metadataFactories = new ArrayList<MetadataGeneratorFactory>();
 
-    @Requirement( hint = "default" )
+    @Requirement
     private LockManager lockManager;
 
-    @Requirement( hint = "nio" )
-    private LockManager fileLockManager;
+    @Requirement
+    private FileLockManager fileLockManager;
 
     private static final Comparator<MetadataGeneratorFactory> COMPARATOR = new Comparator<MetadataGeneratorFactory>()
     {
@@ -98,7 +98,7 @@ public class LockingInstaller
     public LockingInstaller( Logger logger, FileProcessor fileProcessor,
                              List<MetadataGeneratorFactory> metadataFactories,
                              List<LocalRepositoryMaintainer> localRepositoryMaintainers, LockManager lockManager,
-                             LockManager fileLockManager )
+                             FileLockManager fileLockManager )
     {
         setLogger( logger );
         setFileProcessor( fileProcessor );
@@ -112,22 +112,13 @@ public class LockingInstaller
     {
         setLogger( locator.getService( Logger.class ) );
         setFileProcessor( locator.getService( FileProcessor.class ) );
-        for ( LockManager lm : locator.getServices( LockManager.class ) )
-        {
-            if ( lm instanceof IFileLockManager && fileLockManager == null )
-            {
-                setFileLockManager(lm);
-            }
-            else if ( lockManager == null )
-            {
-                setLockManager( lm );
-            }
-        }
+        setLockManager( locator.getService( LockManager.class ) );
+        setFileLockManager( locator.getService( FileLockManager.class ) );
         setLocalRepositoryMaintainers( locator.getServices( LocalRepositoryMaintainer.class ) );
         setMetadataFactories( locator.getServices( MetadataGeneratorFactory.class ) );
     }
 
-    public LockingInstaller setFileLockManager( LockManager fileLockManager )
+    public LockingInstaller setFileLockManager( FileLockManager fileLockManager )
     {
         this.fileLockManager = fileLockManager;
         return this;

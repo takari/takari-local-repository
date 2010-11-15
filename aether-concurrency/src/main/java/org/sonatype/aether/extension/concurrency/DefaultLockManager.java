@@ -23,7 +23,7 @@ import org.codehaus.plexus.component.annotations.Component;
 /**
  * @author Benjamin Hanzelmann
  */
-@Component( role = LockManager.class, hint = "default" )
+@Component( role = LockManager.class )
 public class DefaultLockManager
     implements LockManager
 {
