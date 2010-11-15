@@ -1,10 +1,5 @@
 package org.sonatype.aether.extension.concurrency;
 
-import java.io.File;
-import java.nio.channels.FileChannel;
-
-import org.sonatype.aether.extension.concurrency.LockManager.Lock;
-
 /*******************************************************************************
  * Copyright (c) 2010 Sonatype, Inc.
  * All rights reserved. This program and the accompanying materials
@@ -12,6 +7,11 @@ import org.sonatype.aether.extension.concurrency.LockManager.Lock;
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
+
+import java.io.File;
+import java.nio.channels.FileChannel;
+
+import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 
 /**
  * A LockManager holding external locks, locking files between OS processes (e.g. via {@link AetherFileLock}.
