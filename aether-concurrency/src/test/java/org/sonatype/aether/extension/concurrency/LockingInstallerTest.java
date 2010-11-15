@@ -65,6 +65,8 @@ public class LockingInstallerTest
 
     private DefaultLockManager lockManager;
 
+    private FileLockManager fileLockManager;
+
     private File localArtifactFile;
 
     private File localMetadataFile;
@@ -87,7 +89,9 @@ public class LockingInstallerTest
         localArtifactFile = new File( session.getLocalRepository().getBasedir(), localArtifactPath );
         localMetadataFile = new File( session.getLocalRepository().getBasedir(), localMetadataPath );
         lockManager = new DefaultLockManager();
-        installer = new LockingInstaller().setFileProcessor( TestFileProcessor.INSTANCE ).setLockManager( lockManager );
+        fileLockManager = new FileLockManager();
+        installer =
+            new LockingInstaller().setFileProcessor( TestFileProcessor.INSTANCE ).setLockManager( lockManager ).setFileLockManager( fileLockManager );
         // logger = new SyserrLogger();
         // installer.setLogger( logger );
         request = new InstallRequest();

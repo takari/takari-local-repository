@@ -8,25 +8,17 @@ package org.sonatype.aether.extension.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-import java.io.IOException;
+import java.nio.channels.FileLock;
+
+import org.sonatype.aether.spi.locator.ServiceLocator;
 
 /**
+ * Marker interface to use for {@link ServiceLocator} initialization. This marks a LockManager using {@link FileLock}.
+ * 
  * @author Benjamin Hanzelmann
- *
  */
-public class LockingException
-    extends IOException
+public interface IFileLockManager
+    extends LockManager
 {
-
-    public LockingException( String msg )
-    {
-        super( msg );
-    }
-
-    public LockingException( String msg, Throwable cause )
-    {
-        super( msg );
-        super.initCause( cause );
-    }
 
 }

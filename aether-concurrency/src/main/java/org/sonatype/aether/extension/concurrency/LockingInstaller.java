@@ -10,7 +10,6 @@ package org.sonatype.aether.extension.concurrency;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,8 +74,11 @@ public class LockingInstaller
     @Requirement( role = MetadataGeneratorFactory.class )
     private List<MetadataGeneratorFactory> metadataFactories = new ArrayList<MetadataGeneratorFactory>();
 
-    @Requirement
+    @Requirement( hint = "default" )
     private LockManager lockManager;
+
+    @Requirement( hint = "nio" )
+    private LockManager fileLockManager;
 
     private static final Comparator<MetadataGeneratorFactory> COMPARATOR = new Comparator<MetadataGeneratorFactory>()
     {
@@ -95,11 +97,13 @@ public class LockingInstaller
 
     public LockingInstaller( Logger logger, FileProcessor fileProcessor,
                              List<MetadataGeneratorFactory> metadataFactories,
-                             List<LocalRepositoryMaintainer> localRepositoryMaintainers, LockManager lockManager )
+                             List<LocalRepositoryMaintainer> localRepositoryMaintainers, LockManager lockManager,
+                             LockManager fileLockManager )
     {
         setLogger( logger );
         setFileProcessor( fileProcessor );
         setLockManager( lockManager );
+        setFileLockManager( fileLockManager );
         setMetadataFactories( metadataFactories );
         setLocalRepositoryMaintainers( localRepositoryMaintainers );
     }
@@ -108,9 +112,25 @@ public class LockingInstaller
     {
         setLogger( locator.getService( Logger.class ) );
         setFileProcessor( locator.getService( FileProcessor.class ) );
-        setLockManager( locator.getService( LockManager.class ) );
+        for ( LockManager lm : locator.getServices( LockManager.class ) )
+        {
+            if ( lm instanceof IFileLockManager && fileLockManager == null )
+            {
+                setFileLockManager(lm);
+            }
+            else if ( lockManager == null )
+            {
+                setLockManager( lm );
+            }
+        }
         setLocalRepositoryMaintainers( locator.getServices( LocalRepositoryMaintainer.class ) );
         setMetadataFactories( locator.getServices( MetadataGeneratorFactory.class ) );
+    }
+
+    public LockingInstaller setFileLockManager( LockManager fileLockManager )
+    {
+        this.fileLockManager = fileLockManager;
+        return this;
     }
 
     public LockingInstaller setLogger( Logger logger )
@@ -656,12 +676,12 @@ public class LockingInstaller
         {
             for ( Artifact a : artifacts )
             {
-                lock( locks, gidFile( session, a.getGroupId() ) );
+                filelock( locks, gidFile( session, a.getGroupId() ) );
                 lock( session, locks, a );
             }
             for ( Metadata m : metadata )
             {
-                lock( locks, gidFile( session, m.getGroupId() ) );
+                filelock( locks, gidFile( session, m.getGroupId() ) );
                 lock( session, locks, m );
             }
         }
@@ -682,7 +702,15 @@ public class LockingInstaller
         throws InstallationException, LockingException
     {
         lock( session, ctx.getLocks(), m );
-        lock( ctx.getLocks(), gidFile( session, m.getGroupId() ) );
+        filelock( ctx.getLocks(), gidFile( session, m.getGroupId() ) );
+    }
+
+    private void filelock( List<Lock> locks, File gidFile )
+        throws LockingException
+    {
+        Lock lock = fileLockManager.writeLock( gidFile );
+        lock.lock();
+        locks.add( lock );
     }
 
     private void lock( RepositorySystemSession session, List<Lock> locks, Metadata m )

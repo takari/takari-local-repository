@@ -34,8 +34,11 @@ public class LockingFileProcessor
     implements FileProcessor, Service
 {
 	
-	@Requirement
+    @Requirement( hint = "default" )
 	private LockManager lockManager;
+
+    @Requirement( hint = "nio" )
+    private LockManager fileLockManager;
 
 
     public LockingFileProcessor()
@@ -43,9 +46,10 @@ public class LockingFileProcessor
         // enable default constructor
     }
 
-    public LockingFileProcessor( LockManager lockManager )
+    public LockingFileProcessor( LockManager lockManager, LockManager fileLockManager )
     {
         setLockManager( lockManager );
+        setFileLockManager( fileLockManager );
     }
 
     private static void close( Closeable closeable )
@@ -137,18 +141,22 @@ public class LockingFileProcessor
         Lock readLock = lockManager.readLock( src );
         Lock writeLock = lockManager.writeLock( target );
 
+        Lock srcLock = fileLockManager.readLock( src );
+        Lock targetLock = fileLockManager.writeLock( target );
+
         RandomAccessFile in = null;
         RandomAccessFile out = null;
         boolean writeAcquired = false;
         boolean readAcquired = false;
-        FileLock targetLock = null;
-        FileLock srcLock = null;
         try
         {
             readLock.lock();
             readAcquired = true;
             writeLock.lock();
             writeAcquired = true;
+
+            srcLock.lock();
+            targetLock.lock();
 
             String mode = "r";
             in = new RandomAccessFile( src, mode );
@@ -179,9 +187,6 @@ public class LockingFileProcessor
             close( in );
             close( out );
 
-            release( targetLock );
-            release( srcLock );
-
             if ( readAcquired )
             {
                 readLock.unlock();
@@ -190,6 +195,9 @@ public class LockingFileProcessor
             {
                 writeLock.unlock();
             }
+
+            srcLock.unlock();
+            targetLock.unlock();
         }
     }
 
@@ -335,18 +343,43 @@ public class LockingFileProcessor
      * 
      * @param lockManager The LockManager to use, may not be {@code null}.
      */
-    public void setLockManager( LockManager lockManager )
+    public LockingFileProcessor setLockManager( LockManager lockManager )
     {
         if ( lockManager == null )
         {
             throw new IllegalArgumentException( "LockManager may not be null." );
         }
         this.lockManager = lockManager;
+        return this;
+    }
+
+    /**
+     * Sets the LockManager to use.
+     * 
+     * @param lockManager The LockManager to use, may not be {@code null}.
+     */
+    public void setFileLockManager( LockManager lockManager )
+    {
+        if ( lockManager == null )
+        {
+            throw new IllegalArgumentException( "LockManager may not be null." );
+        }
+        this.fileLockManager = lockManager;
     }
 
     public void initService( ServiceLocator locator )
     {
-        setLockManager( locator.getService( LockManager.class ) );
+        for ( LockManager lm : locator.getServices( LockManager.class ) )
+        {
+            if ( lm instanceof IFileLockManager && fileLockManager == null )
+            {
+                setFileLockManager( lm );
+            }
+            else if ( lockManager == null )
+            {
+                setLockManager( lm );
+            }
+        }
     }
 
 }

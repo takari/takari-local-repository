@@ -70,7 +70,7 @@ public class LockingFileProcessorTest
     {
         targetDir = new File( "target/test-FileUtils" );
         fileProcessor = new LockingFileProcessor();
-        fileProcessor.setLockManager( new DefaultLockManager() );
+        fileProcessor.setLockManager( new DefaultLockManager() ).setFileLockManager( new FileLockManager() );
     }
 
     @After
