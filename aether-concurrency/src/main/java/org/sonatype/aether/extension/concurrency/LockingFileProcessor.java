@@ -33,13 +33,12 @@ import org.sonatype.aether.spi.locator.ServiceLocator;
 public class LockingFileProcessor
     implements FileProcessor, Service
 {
-	
+
     @Requirement( hint = "default" )
-	private LockManager lockManager;
+    private LockManager lockManager;
 
     @Requirement( hint = "nio" )
     private LockManager fileLockManager;
-
 
     public LockingFileProcessor()
     {
@@ -63,21 +62,6 @@ public class LockingFileProcessor
             catch ( IOException e )
             {
                 // too bad but who cares
-            }
-        }
-    }
-
-    private static void release( FileLock lock )
-    {
-        if ( lock != null )
-        {
-            try
-            {
-                lock.release();
-            }
-            catch ( IOException e )
-            {
-                // tried everything
             }
         }
     }
@@ -155,8 +139,6 @@ public class LockingFileProcessor
             writeLock.lock();
             writeAcquired = true;
 
-            srcLock.lock();
-            targetLock.lock();
 
             String mode = "r";
             in = new RandomAccessFile( src, mode );
@@ -167,12 +149,15 @@ public class LockingFileProcessor
                 mkdirs( targetDir );
             }
 
+            srcLock.lock();
+            targetLock.lock();
+
             FileChannel srcChannel = in.getChannel();
 
             out = new RandomAccessFile( target, "rw" );
-            FileChannel outChannel = out.getChannel();
-
             out.setLength( 0 );
+
+            FileChannel outChannel = out.getChannel();
 
             WritableByteChannel realChannel = outChannel;
             if ( listener != null )
@@ -187,6 +172,9 @@ public class LockingFileProcessor
             close( in );
             close( out );
 
+            release( srcLock );
+            release( targetLock );
+
             if ( readAcquired )
             {
                 readLock.unlock();
@@ -196,8 +184,7 @@ public class LockingFileProcessor
                 writeLock.unlock();
             }
 
-            srcLock.unlock();
-            targetLock.unlock();
+
         }
     }
 
@@ -250,10 +237,10 @@ public class LockingFileProcessor
         throws IOException
     {
         Lock writeLock = lockManager.writeLock( file );
+        Lock lock = fileLockManager.writeLock( file );
 
         RandomAccessFile out = null;
         FileChannel channel = null;
-        FileLock lock = null;
         boolean writeAcquired = false;
         try
         {
@@ -265,7 +252,6 @@ public class LockingFileProcessor
             writeLock.lock();
             writeAcquired = true;
             out.setLength( 0 );
-            lock = channel.lock( 0, Math.max( 1, channel.size() ), false );
             if ( data == null )
             {
                 channel.truncate( 0 );
@@ -287,6 +273,19 @@ public class LockingFileProcessor
                 writeLock.unlock();
             }
         }
+    }
+
+    private static void release( Lock lock )
+    {
+        try
+        {
+            lock.unlock();
+        }
+        catch ( LockingException e )
+        {
+            // too bad
+        }
+
     }
 
     public void move( File source, File target )
