@@ -61,7 +61,6 @@ public class DefaultFileLockManager
                 {
                     filelocks.remove( file ).release();
                     fileLock.channel().close();
-                    fileLock = fileLock;
                 }
                 catch ( IOException e )
                 {
