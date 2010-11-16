@@ -215,6 +215,7 @@ public class LockingInstaller
         IdentityHashMap<Metadata, Object> processedMetadata = new IdentityHashMap<Metadata, Object>();
 
 
+        boolean installFailed = false;
         try
         {
             try
@@ -282,6 +283,7 @@ public class LockingInstaller
             }
             catch ( InstallationException e )
             {
+                installFailed = true;
                 LocalRepositoryManager lrm = session.getLocalRepositoryManager();
                 for ( Artifact artifact : request.getArtifacts() )
                 {
@@ -307,7 +309,15 @@ public class LockingInstaller
             }
             catch ( LockingException e )
             {
-                throw new IllegalStateException( "Could not unlock installed files", e );
+                if ( installFailed )
+                {
+                    // exception thrown anyway, just log and leave finally block
+                    logger.warn( "Could not unlock unstalled files: " + e.getMessage(), e );
+                }
+                else
+                {
+                    throw new InstallationException( "Could not unlock installed files: " + e.getMessage(), e );
+                }
             }
         }
     }
