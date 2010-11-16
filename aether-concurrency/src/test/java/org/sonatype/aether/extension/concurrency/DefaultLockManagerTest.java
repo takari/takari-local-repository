@@ -9,10 +9,12 @@ package org.sonatype.aether.extension.concurrency;
  *******************************************************************************/
 
 import java.io.File;
+import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
+import org.sonatype.aether.test.util.TestFileUtils;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
 import edu.umd.cs.mtc.TestFramework;
@@ -22,18 +24,22 @@ public class DefaultLockManagerTest
 {
     private DefaultLockManager manager;
 
+    private File dir;
+
     @Before
     public void setup()
+        throws IOException
     {
         manager = new DefaultLockManager();
+        this.dir = TestFileUtils.createTempDir( getClass().getSimpleName() );
     }
 
     @Test
     public void testCanonicalFile()
         throws Throwable
     {
-        final File a = new File( "target", "a/b" );
-        final File b = new File( "target", "a/./b" );
+        final File a = new File( dir, "a/b" );
+        final File b = new File( dir, "a/./b" );
         
         TestFramework.runOnce( new MultithreadedTestCase()
         {
@@ -61,8 +67,8 @@ public class DefaultLockManagerTest
     public void testWriteBlocksRead()
         throws Throwable
     {
-        final File a = new File( "target", "a/b" );
-        final File b = new File( "target", "a/b" );
+        final File a = new File( dir, "a/b" );
+        final File b = new File( dir, "a/b" );
 
         TestFramework.runOnce( new MultithreadedTestCase()
         {
@@ -91,8 +97,8 @@ public class DefaultLockManagerTest
     public void testReadDoesNotBlockRead()
         throws Throwable
     {
-        final File a = new File( "target", "a/b" );
-        final File b = new File( "target", "a/b" );
+        final File a = new File( dir, "a/b" );
+        final File b = new File( dir, "a/b" );
 
         TestFramework.runOnce( new MultithreadedTestCase()
         {
@@ -121,8 +127,8 @@ public class DefaultLockManagerTest
     public void testReadBlocksWrite()
         throws Throwable
     {
-        final File a = new File( "target", "a/b" );
-        final File b = new File( "target", "a/b" );
+        final File a = new File( dir, "a/b" );
+        final File b = new File( dir, "a/b" );
 
         TestFramework.runOnce( new MultithreadedTestCase()
         {
@@ -151,8 +157,8 @@ public class DefaultLockManagerTest
     public void testWriteBlocksWrite()
         throws Throwable
     {
-        final File a = new File( "target", "a/b" );
-        final File b = new File( "target", "a/b" );
+        final File a = new File( dir, "a/b" );
+        final File b = new File( dir, "a/b" );
 
         TestFramework.runOnce( new MultithreadedTestCase()
         {

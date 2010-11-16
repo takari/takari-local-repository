@@ -67,8 +67,9 @@ public class LockingFileProcessorTest
 
     @Before
     public void setup()
+        throws IOException
     {
-        targetDir = new File( "target/test-FileUtils" );
+        targetDir = TestFileUtils.createTempDir( getClass().getSimpleName() );
         fileProcessor = new LockingFileProcessor();
         fileProcessor.setLockManager( new DefaultLockManager() ).setFileLockManager( new DefaultFileLockManager() );
     }
