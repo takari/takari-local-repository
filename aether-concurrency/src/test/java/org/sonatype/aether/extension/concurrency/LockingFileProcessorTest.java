@@ -582,4 +582,15 @@ public class LockingFileProcessorTest
         assertTrue( message, end > start + ( wait - 100 ) );
     }
 
+    @Test
+    public void testWriteFile()
+        throws IOException
+    {
+        File file = TestFileUtils.createTempFile( "" );
+        file.delete();
+        fileProcessor.write( file, "12345678" );
+        assertTrue( "empty file was not copied", file.isFile() && file.length() == 8 );
+        file.delete();
+    }
+
 }

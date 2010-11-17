@@ -243,19 +243,18 @@ public class LockingFileProcessor
         {
             mkdirs( file.getParentFile() );
 
+            lock.lock();
+
             out = new RandomAccessFile( file, "rw" );
             channel = lock.channel(); // out.getChannel();
 
             writeLock.lock();
             writeAcquired = true;
-            out.setLength( 0 );
-            if ( data == null )
+
+            channel.truncate( 0 );
+            if ( data != null )
             {
-                channel.truncate( 0 );
-            }
-            else
-            {
-                out.write( data.getBytes( "UTF-8" ) );
+                channel.write( ByteBuffer.wrap( data.getBytes( "UTF-8" ) ) );
             }
         }
         finally
