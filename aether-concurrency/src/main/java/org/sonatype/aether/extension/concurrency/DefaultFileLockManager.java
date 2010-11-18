@@ -85,7 +85,8 @@ public class DefaultFileLockManager
 
         synchronized ( filelocks )
         {
-            if ( ( fileLock = filelocks.get( file ) ) == null )
+            fileLock = filelocks.get( file );
+            if ( fileLock == null || !fileLock.isValid() )
             {
                 fileLock = newFileLock( file, write );
                 filelocks.put( file, fileLock );
