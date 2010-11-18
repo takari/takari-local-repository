@@ -116,7 +116,7 @@ public class LockingFileProcessor
             FileChannel srcChannel = srcLock.channel();// in.getChannel();
 
             FileChannel outChannel = targetLock.channel();// out.getChannel();
-            // outChannel.truncate( 0 );
+            outChannel.truncate( 0 );
 
             WritableByteChannel realChannel = outChannel;
             if ( listener != null )
@@ -134,7 +134,6 @@ public class LockingFileProcessor
             close( srcLock.channel() );
             close( targetLock.channel() );
 
-
             if ( readAcquired )
             {
                 readLock.unlock();
@@ -143,8 +142,6 @@ public class LockingFileProcessor
             {
                 writeLock.unlock();
             }
-
-
         }
     }
 
