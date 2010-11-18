@@ -17,12 +17,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonatype.aether.extension.concurrency.DefaultFileLockManager.DefaultFileLock;
 import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLock;
-import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.test.impl.SysoutLogger;
 import org.sonatype.aether.test.util.TestFileUtils;
-
-import edu.umd.cs.mtc.MultithreadedTestCase;
-import edu.umd.cs.mtc.TestFramework;
 
 @SuppressWarnings( "unused" )
 public class DefaultFileLockManagerTest
