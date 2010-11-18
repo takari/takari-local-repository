@@ -201,7 +201,7 @@ public class LockingInstaller
         {
             lockAll( session, request, ctx );
         }
-        catch ( LockingException e )
+        catch ( IOException e )
         {
             throw new InstallationException( "Could not safely lock files", e );
         }
@@ -228,7 +228,7 @@ public class LockingInstaller
                         {
                             lock( session, metadata, ctx );
                         }
-                        catch ( LockingException e )
+                        catch ( IOException e )
                         {
                             throw new InstallationException( "Could not install " + metadata.toString(), e );
                         }
@@ -261,7 +261,7 @@ public class LockingInstaller
                         {
                             lock( session, metadata, ctx );
                         }
-                        catch ( LockingException e )
+                        catch ( IOException e )
                         {
                             throw new InstallationException( "Could not install " + metadata.toString(), e );
                         }
@@ -307,7 +307,7 @@ public class LockingInstaller
             {
                 unlock( ctx );
             }
-            catch ( LockingException e )
+            catch ( IOException e )
             {
                 if ( installFailed )
                 {
@@ -665,13 +665,12 @@ public class LockingInstaller
     }
 
     private synchronized void lockAll( RepositorySystemSession session, InstallRequest request, InstallerContext ctx )
-        throws InstallationException, LockingException
+        throws IOException
     {
         Collection<Artifact> artifacts = request.getArtifacts();
         Collection<Metadata> metadata = request.getMetadata();
 
         List<Lock> locks = ctx.getLocks();
-        Map<String, FileLock> filelocks = ctx.getFilelocks();
 
         try
         {
@@ -686,10 +685,9 @@ public class LockingInstaller
                 lock( session, locks, m );
             }
         }
-        catch ( RuntimeException t )
+        catch ( IOException t )
         {
             unlock( locks );
-            unlock( filelocks );
             throw t;
         }
     }
@@ -700,14 +698,14 @@ public class LockingInstaller
      * @throws LockingException
      */
     private void lock( RepositorySystemSession session, Metadata m, InstallerContext ctx )
-        throws InstallationException, LockingException
+        throws IOException
     {
         lock( session, ctx.getLocks(), m );
         filelock( ctx.getLocks(), gidFile( session, m.getGroupId() ) );
     }
 
     private void filelock( List<Lock> locks, File gidFile )
-        throws LockingException
+        throws IOException
     {
         Lock lock = fileLockManager.writeLock( gidFile );
         lock.lock();
@@ -715,7 +713,7 @@ public class LockingInstaller
     }
 
     private void lock( RepositorySystemSession session, List<Lock> locks, Metadata m )
-        throws LockingException
+        throws IOException
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
@@ -724,7 +722,7 @@ public class LockingInstaller
     }
 
     private void lock( RepositorySystemSession session, List<Lock> locks, Artifact a )
-        throws LockingException
+        throws IOException
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
@@ -733,7 +731,7 @@ public class LockingInstaller
     }
 
     private void lock( List<Lock> locks, File file )
-        throws LockingException
+        throws IOException
     {
         Lock l = lockManager.writeLock( file );
         l.lock();
@@ -741,7 +739,7 @@ public class LockingInstaller
     }
 
     private void unlock( List<Lock> locks )
-        throws LockingException
+        throws IOException
     {
         for ( Lock writeLock : locks )
         {
@@ -749,27 +747,10 @@ public class LockingInstaller
         }
     }
 
-    private void unlock( Map<String, FileLock> filelocks )
-    {
-        for ( FileLock lock : filelocks.values() )
-        {
-            try
-            {
-                lock.release();
-                lock.channel().close();
-            }
-            catch ( IOException e )
-            {
-                logger.debug( String.format( "Exception while releasing file-lock '%s'", lock ), e );
-            }
-        }
-    }
-
     private void unlock( InstallerContext ctx )
-        throws LockingException
+        throws IOException
     {
         unlock( ctx.getLocks() );
-        unlock( ctx.getFilelocks() );
     }
 
     private File gidFile( RepositorySystemSession session, String gid )
@@ -781,19 +762,12 @@ public class LockingInstaller
     {
         private List<Lock> locks = new LinkedList<Lock>();
     
-        private Map<String, FileLock> filelocks = new HashMap<String, FileLock>();
-    
         private Map<Artifact, LocalArtifactRegistration> registrations =
             new HashMap<Artifact, LocalArtifactRegistration>();
     
         public List<Lock> getLocks()
         {
             return locks;
-        }
-    
-        public Map<String, FileLock> getFilelocks()
-        {
-            return filelocks;
         }
     
         public Map<Artifact, LocalArtifactRegistration> getRegistrations()

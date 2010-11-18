@@ -18,7 +18,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLock;
+import org.sonatype.aether.spi.log.Logger;
+import org.sonatype.aether.spi.log.NullLogger;
 
 /**
  * A lock manager using {@link ExternalFileLock}s for inter-process locking.
@@ -29,6 +32,28 @@ import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLoc
 public class DefaultFileLockManager
     implements FileLockManager
 {
+    @Requirement
+    private Logger logger = NullLogger.INSTANCE;
+
+    /**
+     * Construct with given
+     * 
+     * @param logger
+     */
+    public DefaultFileLockManager( Logger logger )
+    {
+        super();
+        setLogger( logger );
+    }
+
+    /**
+     * Enable default constructor.
+     */
+    public DefaultFileLockManager()
+    {
+        super();
+    }
+
     private Map<File, FileLock> filelocks = new HashMap<File, FileLock>();
 
     private Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
@@ -44,9 +69,20 @@ public class DefaultFileLockManager
     }
 
     private FileLock lookup( File file, boolean write )
-        throws LockingException
+        throws IOException
     {
         FileLock fileLock = null;
+
+
+        try
+        {
+            file = file.getCanonicalFile();
+        }
+        catch ( IOException e )
+        {
+            // best effort - use absolute file
+            file = file.getAbsoluteFile();
+        }
 
         synchronized ( filelocks )
         {
@@ -57,15 +93,8 @@ public class DefaultFileLockManager
             }
             else if ( write && fileLock.isShared() )
             {
-                try
-                {
-                    filelocks.remove( file ).release();
-                    fileLock.channel().close();
-                }
-                catch ( IOException e )
-                {
-                    throw new LockingException( "Could not unlock " + file.getAbsolutePath(), e );
-                }
+                filelocks.remove( file ).release();
+                fileLock.channel().close();
 
                 filelocks.put( file, fileLock );
             }
@@ -85,53 +114,29 @@ public class DefaultFileLockManager
     }
 
     public FileLock newFileLock( File file, boolean write )
-        throws LockingException
+        throws IOException
     {
         RandomAccessFile raf;
-        try
+        String mode;
+        FileChannel channel;
+        if ( write )
         {
-            String mode;
-            FileChannel channel;
-            if ( write )
-            {
-                file.getParentFile().mkdirs();
-                mode = "rw";
-            }
-            else
-            {
-                mode = "r";
-            }
-            raf = new RandomAccessFile( file, mode );
-            channel = raf.getChannel();
+            file.getParentFile().mkdirs();
+            mode = "rw";
+        }
+        else
+        {
+            mode = "r";
+        }
+        raf = new RandomAccessFile( file, mode );
+        channel = raf.getChannel();
 
-            try
-            {
-                // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
-                return channel.lock( 0, Math.max( 1, channel.size() ), !write );
-            }
-            catch ( IOException e )
-            {
-                throw new LockingException( "Could not lock " + channel.toString(), e );
-            }
-        }
-        catch ( LockingException e )
-        {
-            Throwable t = e;
-            if ( t.getCause() instanceof IOException )
-            {
-                t = t.getCause();
-            }
-
-            throw new LockingException( "Could not lock " + file.getAbsolutePath(), e );
-        }
-        catch ( IOException e )
-        {
-            throw new LockingException( "Could not lock " + file.getAbsolutePath(), e );
-        }
+        // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
+        return channel.lock( 0, Math.max( 1, channel.size() ), !write );
     }
 
     private void remove( File file )
-        throws LockingException
+        throws IOException
     {
         synchronized ( filelocks )
         {
@@ -139,18 +144,11 @@ public class DefaultFileLockManager
             if ( c != null && c.decrementAndGet() == 0 )
             {
                 count.remove( file );
-                try
+                FileLock lock = filelocks.remove( file );
+                if ( lock.channel().isOpen() )
                 {
-                    FileLock lock = filelocks.remove( file );
-                    if ( lock.channel().isOpen() )
-                    {
-                        lock.release();
-                        lock.channel().close();
-                    }
-                }
-                catch ( IOException e )
-                {
-                    throw new LockingException( "Could not unlock " + file.getAbsolutePath(), e );
+                    lock.release();
+                    lock.channel().close();
                 }
             }
         }
@@ -175,28 +173,37 @@ public class DefaultFileLockManager
         }
 
         public void lock()
-            throws LockingException
+            throws IOException
         {
             lookup();
         }
 
         private void lookup()
-            throws LockingException
+            throws IOException
         {
             lock = manager.lookup( file, write );
         }
 
         public void unlock()
-            throws LockingException
+            throws IOException
         {
             manager.remove( file );
         }
 
         public FileChannel channel()
         {
-            return lock.channel();
+            if ( lock != null )
+            {
+                return lock.channel();
+            }
+            return null;
         }
 
+    }
+
+    public void setLogger( Logger logger )
+    {
+        this.logger = logger;
     }
 
 }

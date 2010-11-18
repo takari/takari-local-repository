@@ -11,6 +11,7 @@ package org.sonatype.aether.extension.concurrency;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -593,4 +594,46 @@ public class LockingFileProcessorTest
         file.delete();
     }
 
+    @Test
+    public void testFailTargetIsDirectory()
+        throws IOException
+    {
+        File src = TestFileUtils.createTempFile( "testFailTargetIsDirectory" );
+        File target = TestFileUtils.createTempDir();
+        try {
+            fileProcessor.copy( src, target, null );
+            fail( "Expected FileNotFoundException (target is dir)" );
+        }
+        catch ( FileNotFoundException e )
+        {
+            // expected
+        }
+        finally
+        {
+            TestFileUtils.delete( src );
+            TestFileUtils.delete( target );
+        }
+    }
+
+    @Test
+    public void testFailSrcIsDirectory()
+        throws IOException
+    {
+        File src = TestFileUtils.createTempDir();
+        File target = TestFileUtils.createTempFile( "testFailSrcIsDirectory" );
+        try
+        {
+            fileProcessor.copy( src, target, null );
+            fail( "Expected FileNotFoundException (src is dir)" );
+        }
+        catch ( FileNotFoundException e )
+        {
+            // expected
+        }
+        finally
+        {
+            TestFileUtils.delete( src );
+            TestFileUtils.delete( target );
+        }
+    }
 }

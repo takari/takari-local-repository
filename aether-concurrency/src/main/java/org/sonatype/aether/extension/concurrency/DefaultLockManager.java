@@ -10,7 +10,6 @@ package org.sonatype.aether.extension.concurrency;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.FileLock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,8 +29,6 @@ public class DefaultLockManager
     implements LockManager
 {
     private Map<File, ReentrantReadWriteLock> locks = new HashMap<File, ReentrantReadWriteLock>();
-
-    private Map<File, FileLock> filelocks = new HashMap<File, FileLock>();
 
     private Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
@@ -85,7 +82,6 @@ public class DefaultLockManager
     }
 
     private void remove( File file )
-        throws LockingException
     {
         synchronized ( locks )
         {
@@ -94,16 +90,6 @@ public class DefaultLockManager
             {
                 count.remove( file );
                 locks.remove( file );
-                try
-                {
-                    FileLock lock = filelocks.remove( file );
-                    lock.release();
-                    lock.channel().close();
-                }
-                catch ( IOException e )
-                {
-                    throw new LockingException( "Could not unlock " + file.getAbsolutePath(), e );
-                }
             }
         }
     }
@@ -132,7 +118,6 @@ public class DefaultLockManager
         }
 
         public void lock()
-            throws LockingException
         {
             lookup();
             if ( write )
@@ -146,7 +131,6 @@ public class DefaultLockManager
         }
 
         private void lookup()
-            throws LockingException
         {
             manager.lookup( file, write );
             if ( write )
@@ -160,7 +144,6 @@ public class DefaultLockManager
         }
 
         public void unlock()
-            throws LockingException
         {
             if ( wLock != null )
             {

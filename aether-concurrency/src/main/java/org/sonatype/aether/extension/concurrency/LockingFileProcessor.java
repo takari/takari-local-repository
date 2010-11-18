@@ -11,7 +11,6 @@ package org.sonatype.aether.extension.concurrency;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -129,8 +128,6 @@ public class LockingFileProcessor
         ExternalFileLock srcLock = fileLockManager.readLock( src );
         ExternalFileLock targetLock = fileLockManager.writeLock( target );
 
-        RandomAccessFile in = null;
-        RandomAccessFile out = null;
         boolean writeAcquired = false;
         boolean readAcquired = false;
         try
@@ -141,9 +138,6 @@ public class LockingFileProcessor
             writeAcquired = true;
 
 
-            String mode = "r";
-            in = new RandomAccessFile( src, mode );
-
             mkdirs( target.getParentFile() );
 
             srcLock.lock();
@@ -151,10 +145,8 @@ public class LockingFileProcessor
 
             FileChannel srcChannel = srcLock.channel();// in.getChannel();
 
-            out = new RandomAccessFile( target, "rw" );
-            out.setLength( 0 );
-
             FileChannel outChannel = targetLock.channel();// out.getChannel();
+            outChannel.truncate( 0 );
 
             WritableByteChannel realChannel = outChannel;
             if ( listener != null )
@@ -166,11 +158,12 @@ public class LockingFileProcessor
         }
         finally
         {
-            close( in );
-            close( out );
-
             release( srcLock );
             release( targetLock );
+
+            close( srcLock.channel() );
+            close( targetLock.channel() );
+
 
             if ( readAcquired )
             {
@@ -236,7 +229,6 @@ public class LockingFileProcessor
         Lock writeLock = lockManager.writeLock( file );
         ExternalFileLock lock = fileLockManager.writeLock( file );
 
-        RandomAccessFile out = null;
         FileChannel channel = null;
         boolean writeAcquired = false;
         try
@@ -245,7 +237,6 @@ public class LockingFileProcessor
 
             lock.lock();
 
-            out = new RandomAccessFile( file, "rw" );
             channel = lock.channel(); // out.getChannel();
 
             writeLock.lock();
@@ -259,10 +250,9 @@ public class LockingFileProcessor
         }
         finally
         {
-            close( channel );
-            close( out );
-
             release( lock );
+
+            close( channel );
 
             if ( writeAcquired )
             {
@@ -277,7 +267,7 @@ public class LockingFileProcessor
         {
             lock.unlock();
         }
-        catch ( LockingException e )
+        catch ( IOException e )
         {
             // too bad
         }

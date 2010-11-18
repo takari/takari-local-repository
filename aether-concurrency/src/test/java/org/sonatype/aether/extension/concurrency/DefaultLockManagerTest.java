@@ -44,7 +44,7 @@ public class DefaultLockManagerTest
         TestFramework.runOnce( new MultithreadedTestCase()
         {
             public void thread1()
-                throws LockingException
+                throws IOException
             {
                 Lock lock = manager.writeLock( a );
                 lock.lock();
@@ -53,7 +53,7 @@ public class DefaultLockManagerTest
             }
 
             public void thread2()
-                throws LockingException
+                throws IOException
             {
                 waitForTick( 1 );
                 Lock lock = manager.writeLock( b );
@@ -73,7 +73,7 @@ public class DefaultLockManagerTest
         TestFramework.runOnce( new MultithreadedTestCase()
         {
             public void thread1()
-                throws LockingException
+                throws IOException
             {
                 Lock lock = manager.writeLock( a );
                 lock.lock();
@@ -82,7 +82,7 @@ public class DefaultLockManagerTest
             }
 
             public void thread2()
-                throws LockingException
+                throws IOException
             {
                 waitForTick( 1 );
                 Lock lock = manager.readLock( b );
@@ -103,7 +103,7 @@ public class DefaultLockManagerTest
         TestFramework.runOnce( new MultithreadedTestCase()
         {
             public void thread1()
-                throws LockingException
+                throws IOException
             {
                 Lock lock = manager.readLock( a );
                 lock.lock();
@@ -112,7 +112,7 @@ public class DefaultLockManagerTest
             }
 
             public void thread2()
-                throws LockingException
+                throws IOException
             {
                 waitForTick( 1 );
                 Lock lock = manager.readLock( b );
@@ -133,7 +133,7 @@ public class DefaultLockManagerTest
         TestFramework.runOnce( new MultithreadedTestCase()
         {
             public void thread1()
-                throws LockingException
+                throws IOException
             {
                 Lock lock = manager.readLock( a );
                 lock.lock();
@@ -142,7 +142,7 @@ public class DefaultLockManagerTest
             }
 
             public void thread2()
-                throws LockingException
+                throws IOException
             {
                 waitForTick( 1 );
                 Lock lock = manager.writeLock( b );
@@ -163,7 +163,7 @@ public class DefaultLockManagerTest
         TestFramework.runOnce( new MultithreadedTestCase()
         {
             public void thread1()
-                throws LockingException
+                throws IOException
             {
                 Lock lock = manager.writeLock( a );
                 lock.lock();
@@ -172,7 +172,7 @@ public class DefaultLockManagerTest
             }
 
             public void thread2()
-                throws LockingException
+                throws IOException
             {
                 waitForTick( 1 );
                 Lock lock = manager.writeLock( b );

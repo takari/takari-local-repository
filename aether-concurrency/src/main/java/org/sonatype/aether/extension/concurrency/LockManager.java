@@ -9,6 +9,7 @@ package org.sonatype.aether.extension.concurrency;
  *******************************************************************************/
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * A LockManager holding locks internal to the running VM (e.g. via
@@ -26,10 +27,10 @@ public interface LockManager
     public interface Lock
     {
         void lock()
-            throws LockingException;
+            throws IOException;
 
         void unlock()
-            throws LockingException;
+            throws IOException;
     }
 
 }

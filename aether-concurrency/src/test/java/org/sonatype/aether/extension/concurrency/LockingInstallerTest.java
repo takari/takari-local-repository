@@ -409,7 +409,7 @@ public class LockingInstallerTest
             }
 
             public void thread3()
-                throws LockingException
+                throws IOException
             {
                 File f = new File( session.getLocalRepository().getBasedir(), localArtifactPath );
                 Lock lock = lockManager.writeLock( f );
