@@ -67,43 +67,13 @@ public class LockingFileProcessor
     }
 
     /**
-     * Thread-safe variant of {@link File#mkdirs()}. Adapted from Java 6. Creates the directory named by the given
-     * abstract pathname, including any necessary but nonexistent parent directories. Note that if this operation fails
-     * it may have succeeded in creating some of the necessary parent directories.
-     * 
-     * @param directory The directory to create, may be {@code null}.
-     * @return {@code true} if and only if the directory was created, along with all necessary parent directories;
-     *         {@code false} otherwise
+     * @see FileUtils#mkdirs(File)
      */
     public boolean mkdirs( File directory )
     {
-        if ( directory == null )
-        {
-            return false;
-        }
-
-        if ( directory.exists() )
-        {
-            return false;
-        }
-        if ( directory.mkdir() )
-        {
-            return true;
-        }
-
-        File canonDir = null;
-        try
-        {
-            canonDir = directory.getCanonicalFile();
-        }
-        catch ( IOException e )
-        {
-            return false;
-        }
-
-        File parentDir = canonDir.getParentFile();
-        return ( parentDir != null && ( mkdirs( parentDir ) || parentDir.exists() ) && canonDir.mkdir() );
+        return FileUtils.mkdirs( directory );
     }
+
 
     /**
      * Copy src- to target-file. Creates the necessary directories for the target file. In case of an error, the created

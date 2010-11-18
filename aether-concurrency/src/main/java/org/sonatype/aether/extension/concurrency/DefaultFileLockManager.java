@@ -123,7 +123,7 @@ public class DefaultFileLockManager
         FileChannel channel;
         if ( write )
         {
-            file.getParentFile().mkdirs();
+            FileUtils.mkdirs( file.getParentFile() );
             mode = "rw";
         }
         else
