@@ -73,7 +73,6 @@ public class DefaultFileLockManager
     {
         FileLock fileLock = null;
 
-
         try
         {
             file = file.getCanonicalFile();
@@ -93,9 +92,11 @@ public class DefaultFileLockManager
             }
             else if ( write && fileLock.isShared() )
             {
+                logger.warn( "unsafe upgrade to exclusive lock" );
                 // FIXME do not close instantly! readers will die... is this situation even possible if
                 // ReentrantWriteLock from DefaultLockManager is requested before FileLock?
-                filelocks.remove( file ).release();
+                filelocks.remove( file );
+                fileLock.release();
                 fileLock.channel().close();
                 fileLock = newFileLock( file, write );
                 filelocks.put( file, fileLock );
@@ -133,8 +134,16 @@ public class DefaultFileLockManager
         raf = new RandomAccessFile( file, mode );
         channel = raf.getChannel();
 
-        // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
-        return channel.lock( 0, Math.max( 1, channel.size() ), !write );
+        try
+        {
+            // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
+            return channel.lock( 0, Math.max( 1, channel.size() ), !write );
+        }
+        catch ( IOException e )
+        {
+            channel.close();
+            throw e;
+        }
     }
 
     private void remove( File file )
