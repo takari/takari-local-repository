@@ -208,9 +208,14 @@ public class DefaultFileLockManager
 
     }
 
+    /**
+     * Set the logger to use.
+     * 
+     * @param logger The logger to use. If {@code null}, disable logging.
+     */
     public void setLogger( Logger logger )
     {
-        this.logger = logger;
+        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
     }
 
 }
