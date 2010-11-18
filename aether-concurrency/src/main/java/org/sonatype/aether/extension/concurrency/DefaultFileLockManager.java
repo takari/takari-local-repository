@@ -93,9 +93,11 @@ public class DefaultFileLockManager
             }
             else if ( write && fileLock.isShared() )
             {
+                // FIXME do not close instantly! readers will die... is this situation even possible if
+                // ReentrantWriteLock from DefaultLockManager is requested before FileLock?
                 filelocks.remove( file ).release();
                 fileLock.channel().close();
-
+                fileLock = newFileLock( file, write );
                 filelocks.put( file, fileLock );
             }
 
