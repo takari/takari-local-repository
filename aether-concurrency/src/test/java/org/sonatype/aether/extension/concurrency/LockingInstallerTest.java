@@ -563,43 +563,4 @@ public class LockingInstallerTest
         assertTrue( message, end > start + ( wait - 100 ) );
     }
 
-    /**
-     * @author Benjamin Hanzelmann
-     */
-    private final class SyserrLogger
-        implements Logger
-    {
-        public boolean isDebugEnabled()
-        {
-            return true;
-        }
-
-        public void debug( String msg, Throwable error )
-        {
-            debug( msg );
-            error.printStackTrace();
-        }
-
-        public void debug( String msg )
-        {
-            System.err.println( msg );
-        }
-
-        public boolean isWarnEnabled()
-        {
-            return true;
-        }
-
-        public void warn( String msg, Throwable error )
-        {
-            warn( msg );
-            error.printStackTrace();
-        }
-
-        public void warn( String msg )
-        {
-            System.err.println( msg );
-        }
-    }
-
 }

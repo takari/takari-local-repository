@@ -18,7 +18,7 @@ import org.junit.Test;
 import org.sonatype.aether.extension.concurrency.DefaultFileLockManager.DefaultFileLock;
 import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLock;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
-import org.sonatype.aether.spi.log.Logger;
+import org.sonatype.aether.test.impl.SysoutLogger;
 import org.sonatype.aether.test.util.TestFileUtils;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
@@ -37,41 +37,7 @@ public class DefaultFileLockManagerTest
     public void setup()
         throws IOException
     {
-        manager = new DefaultFileLockManager( new Logger()
-        {
-
-            public void warn( String msg, Throwable error )
-            {
-                warn( msg );
-                error.printStackTrace( System.err );
-            }
-
-            public void warn( String msg )
-            {
-                System.err.println( msg );
-            }
-
-            public boolean isWarnEnabled()
-            {
-                return true;
-            }
-
-            public boolean isDebugEnabled()
-            {
-                return true;
-            }
-
-            public void debug( String msg, Throwable error )
-            {
-                debug( msg );
-                error.printStackTrace( System.out );
-            }
-
-            public void debug( String msg )
-            {
-                System.out.println( msg );
-            }
-        } );
+        manager = new DefaultFileLockManager( new SysoutLogger() );
         this.dir = TestFileUtils.createTempDir( getClass().getSimpleName() );
     }
 
