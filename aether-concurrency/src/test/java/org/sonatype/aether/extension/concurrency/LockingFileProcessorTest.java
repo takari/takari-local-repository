@@ -92,12 +92,14 @@ public class LockingFileProcessorTest
     public void testCopy()
         throws IOException
     {
-        File file = TestFileUtils.createTempFile( "testCopy\nasdf" );
+        String contents = "testCopy\nasdf";
+
+        File file = TestFileUtils.createTempFile( contents );
         File target = new File( targetDir, "testCopy.txt" );
 
         fileProcessor.copy( file, target, null );
 
-        assertContent( file, "testCopy\nasdf".getBytes( "UTF-8" ) );
+        assertContent( target, contents.getBytes( "UTF-8" ) );
 
         file.delete();
     }
@@ -123,16 +125,32 @@ public class LockingFileProcessorTest
     public void testOverwrite()
         throws IOException
     {
-        File file = TestFileUtils.createTempFile( "testOverwrite\nasdf" );
+        String contents = "testOverwrite\nasdf";
+
+        File file = TestFileUtils.createTempFile( contents );
 
         for ( int i = 0; i < 5; i++ )
         {
             File target = new File( targetDir, "testOverwrite.txt" );
             fileProcessor.copy( file, target, null );
-            assertContent( file, "testOverwrite\nasdf".getBytes( "UTF-8" ) );
+            assertContent( target, contents.getBytes( "UTF-8" ) );
         }
 
         file.delete();
+    }
+
+    @Test
+    public void testOverwriteBiggerFile()
+        throws IOException
+    {
+        String contents = "src";
+
+        File src = TestFileUtils.createTempFile( contents );
+        File dst = TestFileUtils.createTempFile( "destination-file-with-greater-length-than-new-contents" );
+
+        fileProcessor.copy( src, dst, null );
+
+        assertContent( dst, contents.getBytes( "UTF-8" ) );
     }
 
     @SuppressWarnings( "unused" )
