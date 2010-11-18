@@ -201,6 +201,11 @@ public class DefaultFileLockManager
             return null;
         }
 
+        protected FileLock getLock()
+        {
+            return lock;
+        }
+
     }
 
     public void setLogger( Logger logger )
