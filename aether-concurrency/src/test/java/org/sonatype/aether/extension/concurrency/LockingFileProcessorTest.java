@@ -482,7 +482,7 @@ public class LockingFileProcessorTest
                 catch ( IOException e )
                 {
                     e.printStackTrace();
-                    fail( "testBlockingCopy failed (write lock on src file): " + e.getMessage() );
+                    fail( "testLockCanonicalFile failed (write lock on src file): " + e.getMessage() );
                 }
 
                 assertTick( 2 );
