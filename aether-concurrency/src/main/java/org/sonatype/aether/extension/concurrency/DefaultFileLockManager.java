@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLock;
 import org.sonatype.aether.spi.log.Logger;
 import org.sonatype.aether.spi.log.NullLogger;
 
@@ -34,6 +33,11 @@ public class DefaultFileLockManager
 {
     @Requirement
     private Logger logger = NullLogger.INSTANCE;
+    
+    private final Map<File, FileLock> filelocks = new HashMap<File, FileLock>();
+
+    private final Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
+
 
     /**
      * Construct with given
@@ -53,10 +57,6 @@ public class DefaultFileLockManager
     {
         super();
     }
-
-    private Map<File, FileLock> filelocks = new HashMap<File, FileLock>();
-
-    private Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
     public ExternalFileLock readLock( File file )
     {

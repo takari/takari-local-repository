@@ -28,9 +28,9 @@ import org.codehaus.plexus.component.annotations.Component;
 public class DefaultLockManager
     implements LockManager
 {
-    private Map<File, ReentrantReadWriteLock> locks = new HashMap<File, ReentrantReadWriteLock>();
+    private final Map<File, ReentrantReadWriteLock> locks = new HashMap<File, ReentrantReadWriteLock>();
 
-    private Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
+    private final Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
     public Lock readLock( File file )
     {
@@ -57,7 +57,7 @@ public class DefaultLockManager
         {
             // best effort - use absolute file
             file = file.getAbsoluteFile();
-        }
+        }                                                     
 
         synchronized ( locks )
         {
