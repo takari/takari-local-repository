@@ -142,7 +142,7 @@ public class DefaultFileLockManager
         }
         catch ( IOException e )
         {
-            channel.close();
+            raf.close();
             throw e;
         }
     }
