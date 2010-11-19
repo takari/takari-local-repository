@@ -163,7 +163,7 @@ public class DefaultFileLockManager
                     lock.channel().close();
                 }
             } else {
-                logger.warn(String.format("Unable to retrieve the lock for file %s", file.getCanonicalPath()));              
+                logger.warn(String.format("Unable to retrieve the lock for file %s", file.getAbsolutePath()));
             }
         }
     }
