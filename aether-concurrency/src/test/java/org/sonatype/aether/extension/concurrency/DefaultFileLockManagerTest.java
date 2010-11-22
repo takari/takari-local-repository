@@ -12,6 +12,7 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -43,28 +44,28 @@ public class DefaultFileLockManagerTest
     {
         int wait = 1500;
         ExternalProcessFileLock ext = new ExternalProcessFileLock();
-    
+
         File file = TestFileUtils.createTempFile( "" );
 
         ExternalFileLock lock = manager.readLock( file );
-    
+
         process = ext.lockFile( file.getAbsolutePath(), wait );
-    
+
         long start = System.currentTimeMillis();
-    
+
         // give external lock time to initialize
         Thread.sleep( 500 );
-    
+
         lock.lock();
-    
+
         long end = System.currentTimeMillis();
-        
+
         lock.unlock();
-    
+
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
-    
+
         assertTrue( message, end > start + ( wait - 100 ) );
-    
+
     }
 
     @Test
@@ -73,24 +74,24 @@ public class DefaultFileLockManagerTest
     {
         int wait = 1500;
         ExternalProcessFileLock ext = new ExternalProcessFileLock();
-    
+
         File file = TestFileUtils.createTempFile( "" );
-    
+
         process = ext.lockFile( file.getAbsolutePath(), wait );
 
         ExternalFileLock lock = manager.writeLock( file );
-    
+
         long start = System.currentTimeMillis();
-    
+
         // give external lock time to initialize
         Thread.sleep( 500 );
-    
+
         lock.lock();
-    
+
         long end = System.currentTimeMillis();
 
         lock.unlock();
-    
+
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
         assertTrue( message, end > start + ( wait - 100 ) );
     }
@@ -107,6 +108,28 @@ public class DefaultFileLockManagerTest
         lock = (DefaultFileLock) manager.writeLock( file );
         lock.lock();
         assertTrue( "read lock did not upgrade to exclusive", !lock.getLock().isShared() );
+    }
 
+    @Test
+    public void testCanonicalFileLock()
+        throws Exception
+    {
+        File file1 = TestFileUtils.createTempFile( "testCanonicalFileLock" );
+        File file2 = new File( file1.getParent() + File.separator + ".", file1.getName() );
+
+        ExternalFileLock lock1 = manager.writeLock( file1 );
+        ExternalFileLock lock2 = manager.writeLock( file2 );
+        lock1.lock();
+        FileChannel channel = lock1.channel();
+
+        lock2.lock();
+        assertEquals( channel, lock2.channel() );
+
+        lock1.unlock();
+        assertTrue( channel.isOpen() );
+        assertTrue( lock2.channel().isOpen() );
+
+        lock2.unlock();
+        assertFalse( "manager failed to unlock, channel still open", channel.isOpen() );
     }
 }
