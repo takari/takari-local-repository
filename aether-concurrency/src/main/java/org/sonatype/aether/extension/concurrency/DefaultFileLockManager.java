@@ -86,6 +86,7 @@ public class DefaultFileLockManager
                 // FIXME do not close instantly! readers will die... is this situation even possible if
                 // ReentrantWriteLock from DefaultLockManager is requested before FileLock?
                 filelocks.remove( file );
+                count.remove( file );
                 fileLock.release();
                 fileLock.channel().close();
                 fileLock = newFileLock( file, write );
