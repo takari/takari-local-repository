@@ -108,6 +108,7 @@ public class DefaultFileLockManagerTest
         lock = (DefaultFileLock) manager.writeLock( file );
         lock.lock();
         assertTrue( "read lock did not upgrade to exclusive", !lock.getLock().isShared() );
+        lock.unlock();
     }
 
     @Test
