@@ -33,11 +33,10 @@ public class DefaultFileLockManager
 {
     @Requirement
     private Logger logger = NullLogger.INSTANCE;
-    
+
     private final Map<File, FileLock> filelocks = new HashMap<File, FileLock>();
 
     private final Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
-
 
     /**
      * Construct with given
@@ -72,16 +71,6 @@ public class DefaultFileLockManager
         throws IOException
     {
         FileLock fileLock = null;
-
-        try
-        {
-            file = file.getCanonicalFile();
-        }
-        catch ( IOException e )
-        {
-            // best effort - use absolute file
-            file = file.getAbsoluteFile();
-        }
 
         synchronized ( filelocks )
         {
@@ -162,8 +151,10 @@ public class DefaultFileLockManager
                     lock.release();
                     lock.channel().close();
                 }
-            } else {
-                logger.warn(String.format("Unable to retrieve the lock for file %s", file.getAbsolutePath()));
+            }
+            else
+            {
+                logger.warn( String.format( "Unable to retrieve the lock for file %s", file.getAbsolutePath() ) );
             }
         }
     }
@@ -181,6 +172,17 @@ public class DefaultFileLockManager
 
         private DefaultFileLock( DefaultFileLockManager manager, File file, boolean write )
         {
+
+            try
+            {
+                file = file.getCanonicalFile();
+            }
+            catch ( IOException e )
+            {
+                // best effort - use absolute file
+                file = file.getAbsoluteFile();
+            }
+
             this.manager = manager;
             this.file = file;
             this.write = write;
