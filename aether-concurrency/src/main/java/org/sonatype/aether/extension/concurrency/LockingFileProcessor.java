@@ -23,6 +23,8 @@ import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor;
 import org.sonatype.aether.spi.locator.Service;
 import org.sonatype.aether.spi.locator.ServiceLocator;
+import org.sonatype.aether.spi.log.Logger;
+import org.sonatype.aether.spi.log.NullLogger;
 
 /**
  * A utility class helping with file-based operations.
@@ -33,6 +35,9 @@ import org.sonatype.aether.spi.locator.ServiceLocator;
 public class LockingFileProcessor
     implements FileProcessor, Service
 {
+
+    @Requirement
+    private Logger logger = NullLogger.INSTANCE;
 
     @Requirement
     private LockManager lockManager;
@@ -51,7 +56,7 @@ public class LockingFileProcessor
         setFileLockManager( fileLockManager );
     }
 
-    private static void close( Closeable closeable )
+    private void close( Closeable closeable )
     {
         if ( closeable != null )
         {
@@ -61,7 +66,22 @@ public class LockingFileProcessor
             }
             catch ( IOException e )
             {
-                // too bad but who cares
+                logger.warn( "Failed to close file: " + e );
+            }
+        }
+    }
+
+    private void unlock( LockManager.Lock lock )
+    {
+        if ( lock != null )
+        {
+            try
+            {
+                lock.unlock();
+            }
+            catch ( IOException e )
+            {
+                logger.warn( "Failed to unlock file: " + e );
             }
         }
     }
@@ -128,19 +148,19 @@ public class LockingFileProcessor
         }
         finally
         {
-            release( srcLock );
-            release( targetLock );
+            unlock( srcLock );
+            unlock( targetLock );
 
             close( srcLock.channel() );
             close( targetLock.channel() );
 
             if ( readAcquired )
             {
-                readLock.unlock();
+                unlock( readLock );
             }
             if ( writeAcquired )
             {
-                writeLock.unlock();
+                unlock( writeLock );
             }
         }
     }
@@ -153,7 +173,7 @@ public class LockingFileProcessor
      * @return the number of copied bytes.
      * @throws IOException if an I/O error occurs.
      */
-    private static long copy( FileChannel src, WritableByteChannel target )
+    private long copy( FileChannel src, WritableByteChannel target )
         throws IOException
     {
         long total = 0;
@@ -217,28 +237,15 @@ public class LockingFileProcessor
         }
         finally
         {
-            release( lock );
+            unlock( lock );
 
             close( channel );
 
             if ( writeAcquired )
             {
-                writeLock.unlock();
+                unlock( writeLock );
             }
         }
-    }
-
-    private static void release( ExternalFileLock lock )
-    {
-        try
-        {
-            lock.unlock();
-        }
-        catch ( IOException e )
-        {
-            // too bad
-        }
-
     }
 
     public void move( File source, File target )
@@ -289,6 +296,17 @@ public class LockingFileProcessor
             return count;
         }
     }
+    /**
+     * Sets the logger to use for this component.
+     * 
+     * @param logger The logger to use, may be {@code null} to disable logging.
+     * @return This component for chaining, never {@code null}.
+     */
+    public LockingFileProcessor setLogger( Logger logger )
+    {
+        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
+        return this;
+    }
 
     /**
      * Sets the LockManager to use.
@@ -323,6 +341,7 @@ public class LockingFileProcessor
     {
         setLockManager( locator.getService( LockManager.class ) );
         setFileLockManager( locator.getService( FileLockManager.class ) );
+        setLogger( locator.getService( Logger.class ) );
     }
 
 }
