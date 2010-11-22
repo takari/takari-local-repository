@@ -142,7 +142,11 @@ public class DefaultFileLockManager
         synchronized ( filelocks )
         {
             AtomicInteger c = count.get( file );
-            if ( c != null && c.decrementAndGet() == 0 )
+            if ( c == null )
+            {
+                logger.warn( String.format( "Unable to retrieve the lock for file %s", file.getAbsolutePath() ) );
+            }
+            else if ( c.decrementAndGet() == 0 )
             {
                 count.remove( file );
                 FileLock lock = filelocks.remove( file );
@@ -151,10 +155,6 @@ public class DefaultFileLockManager
                     lock.release();
                     lock.channel().close();
                 }
-            }
-            else
-            {
-                logger.warn( String.format( "Unable to retrieve the lock for file %s", file.getAbsolutePath() ) );
             }
         }
     }
