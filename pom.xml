@@ -18,7 +18,7 @@ http://www.eclipse.org/legal/epl-v10.html
   </parent>
 
   <artifactId>aether-concurrency</artifactId>
-  <version>1.8</version>
+  <version>1.9-SNAPSHOT</version>
 
   <name>Aether :: Concurrency Extensions</name>
   <description>
