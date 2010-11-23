@@ -25,6 +25,13 @@ http://www.eclipse.org/legal/epl-v10.html
       This extension for Aether contains an installer that is safe for concurrent use.
   </description>
 
+  <scm>
+      <connection>scm:git:git@github.com:sonatype/aether-concurrency.git</connection>
+      <developerConnection>scm:git:git@github.com:sonatype/aether-concurrency.git</developerConnection>
+      <url>http://github.com/sonatype/aether-concurrency</url>
+  </scm>
+
+
   <properties>
       <aether.version>1.8</aether.version>
   </properties>
