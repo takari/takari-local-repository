@@ -14,31 +14,36 @@ http://www.eclipse.org/legal/epl-v10.html
   <parent>
     <groupId>org.sonatype.aether</groupId>
     <artifactId>aether-parent</artifactId>
-    <version>1.9-SNAPSHOT</version>
+    <version>1.8</version>
   </parent>
 
   <artifactId>aether-concurrency</artifactId>
+  <version>1.8-SNAPSHOT</version>
 
   <name>Aether :: Concurrency Extensions</name>
   <description>
       This extension for Aether contains an installer that is safe for concurrent use.
   </description>
 
+  <properties>
+      <aether.version>1.8</aether.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.sonatype.aether</groupId>
       <artifactId>aether-api</artifactId>
-      <version>${project.version}</version>
+      <version>${aether.version}</version>
     </dependency>
     <dependency>
       <groupId>org.sonatype.aether</groupId>
       <artifactId>aether-spi</artifactId>
-      <version>${project.version}</version>
+      <version>${aether.version}</version>
     </dependency>
     <dependency>
       <groupId>org.sonatype.aether</groupId>
       <artifactId>aether-util</artifactId>
-      <version>${project.version}</version>
+      <version>${aether.version}</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
@@ -54,7 +59,7 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>org.sonatype.aether</groupId>
       <artifactId>aether-test-util</artifactId>
-      <version>${project.version}</version>
+      <version>${aether.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -66,7 +71,7 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
     	<groupId>org.sonatype.aether</groupId>
     	<artifactId>aether-impl</artifactId>
-    	<version>${project.version}</version>
+      <version>${aether.version}</version>
     </dependency>
   </dependencies>
 
