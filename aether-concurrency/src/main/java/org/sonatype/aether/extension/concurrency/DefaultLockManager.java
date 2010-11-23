@@ -30,12 +30,14 @@ public class DefaultLockManager
 {
     private final Map<File, ReentrantReadWriteLock> locks = new HashMap<File, ReentrantReadWriteLock>();
 
-    private final Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
+    /**
+     * Package visibility for testing purpose.
+     */
+    final Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
     public Lock readLock( File file )
     {
         ReentrantReadWriteLock lock = lookup( file, false );
-
         return new DefaultLock( this, lock, file, false );
     }
 

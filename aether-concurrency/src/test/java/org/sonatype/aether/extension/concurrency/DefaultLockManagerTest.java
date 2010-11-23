@@ -8,6 +8,8 @@ package org.sonatype.aether.extension.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
+import static org.junit.Assert.*;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -35,12 +37,29 @@ public class DefaultLockManagerTest
     }
 
     @Test
-    public void testCanonicalFile()
+    public void testUnlockCanonicalFile()
         throws Throwable
     {
         final File a = new File( dir, "a/b" );
         final File b = new File( dir, "a/./b" );
+
+        Lock lockA = manager.readLock( a );
+        Lock lockB = manager.readLock( b );
+        lockA.lock();
+        lockB.lock();
+        lockA.unlock();
+        lockB.unlock();
         
+        assertEquals( 0, manager.count.size() );
+    }
+
+    @Test
+    public void testLockCanonicalFile()
+        throws Throwable
+    {
+        final File a = new File( dir, "a/b" );
+        final File b = new File( dir, "a/./b" );
+
         TestFramework.runOnce( new MultithreadedTestCase()
         {
             public void thread1()
