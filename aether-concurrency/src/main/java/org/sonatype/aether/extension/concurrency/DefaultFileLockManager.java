@@ -72,6 +72,8 @@ public class DefaultFileLockManager
     {
         FileLock fileLock = null;
 
+        boolean upgrade = false;
+
         synchronized ( filelocks )
         {
             fileLock = filelocks.get( file );
@@ -79,32 +81,49 @@ public class DefaultFileLockManager
             {
                 fileLock = newFileLock( file, write );
                 filelocks.put( file, fileLock );
+                incrementRef( file );
             }
             else if ( write && fileLock.isShared() )
             {
-                logger.warn( "unsafe upgrade to exclusive lock" );
-                // FIXME do not close instantly! readers will die... is this situation even possible if
-                // ReentrantWriteLock from DefaultLockManager is requested before FileLock?
-                filelocks.remove( file );
-                count.remove( file );
-                fileLock.release();
-                fileLock.channel().close();
-                fileLock = newFileLock( file, write );
-                filelocks.put( file, fileLock );
-            }
-
-            AtomicInteger c = count.get( file );
-            if ( c == null )
-            {
-                c = new AtomicInteger( 1 );
-                count.put( file, c );
+                upgrade = true;
             }
             else
             {
-                c.incrementAndGet();
+                incrementRef( file );
             }
         }
+
+        while ( upgrade && fileLock.isShared() )
+        {
+            synchronized ( fileLock )
+            {
+                try
+                {
+                    fileLock.wait();
+                }
+                catch ( InterruptedException e )
+                {
+                    Thread.currentThread().interrupt();
+                    return null;
+                }
+            }
+            fileLock = lookup( file, write );
+        }
         return fileLock;
+    }
+
+    public void incrementRef( File file )
+    {
+        AtomicInteger c = count.get( file );
+        if ( c == null )
+        {
+            c = new AtomicInteger( 1 );
+            count.put( file, c );
+        }
+        else
+        {
+            c.incrementAndGet();
+        }
     }
 
     private FileLock newFileLock( File file, boolean write )
@@ -155,6 +174,10 @@ public class DefaultFileLockManager
                 {
                     lock.release();
                     lock.channel().close();
+                }
+                synchronized ( lock )
+                {
+                    lock.notify();
                 }
             }
         }

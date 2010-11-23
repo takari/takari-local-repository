@@ -102,17 +102,33 @@ public class DefaultFileLockManagerTest
 
     @Test
     public void testUpgradeSharedToExclusiveLock()
-        throws IOException
+        throws Throwable
     {
-        File file = TestFileUtils.createTempFile( "" );
+        final File file = TestFileUtils.createTempFile( "" );
 
-        DefaultFileLock lock = (DefaultFileLock) manager.readLock( file );
-        lock.lock();
-        assertTrue( "read lock is not shared", lock.getLock().isShared() );
-        lock = (DefaultFileLock) manager.writeLock( file );
-        lock.lock();
-        assertTrue( "read lock did not upgrade to exclusive", !lock.getLock().isShared() );
-        lock.unlock();
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            public void thread1()
+                throws IOException
+            {
+                DefaultFileLock lock = (DefaultFileLock) manager.readLock( file );
+                lock.lock();
+                assertTrue( "read lock is not shared", lock.getLock().isShared() );
+                waitForTick( 2 );
+                lock.unlock();
+            }
+
+            public void thread2()
+                throws IOException
+            {
+                waitForTick( 1 );
+                DefaultFileLock lock = (DefaultFileLock) manager.writeLock( file );
+                lock.lock();
+                assertTick( 2 );
+                assertTrue( "read lock did not upgrade to exclusive", !lock.getLock().isShared() );
+                lock.unlock();
+            }
+        } );
     }
 
     @Test
