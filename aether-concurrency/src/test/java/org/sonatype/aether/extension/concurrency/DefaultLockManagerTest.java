@@ -202,4 +202,41 @@ public class DefaultLockManagerTest
         } );
     }
 
+    @Test
+    public void testNoLockLeakage()
+    {
+        final File a = new File( dir, "a/b" );
+        final File b = new File( dir, "a/c" );
+        manager.readLock( a );
+        manager.writeLock( b );
+        assertEquals( 0, manager.count.size() );
+    }
+
+    @Test
+    public void testNoPrematureLocking()
+        throws Throwable
+    {
+        final File a = new File( dir, "a/b" );
+
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            public void thread1()
+                throws IOException
+            {
+                Lock lock = manager.readLock( a );
+                waitForTick( 2 );
+            }
+
+            public void thread2()
+                throws IOException
+            {
+                waitForTick( 1 );
+                Lock lock = manager.writeLock( a );
+                lock.lock();
+                assertTick( 1 );
+                lock.unlock();
+            }
+        } );
+    }
+
 }
