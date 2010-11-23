@@ -97,17 +97,18 @@ public class DefaultLockManager
     public static class DefaultLock
         implements Lock
     {
-        private ReentrantReadWriteLock lock;
 
-        private DefaultLockManager manager;
+        private final ReentrantReadWriteLock lock;
 
-        private File file;
+        private final DefaultLockManager manager;
+
+        private final File file;
 
         private ReadLock rLock;
 
         private WriteLock wLock;
 
-        private boolean write;
+        private final boolean write;
 
         private DefaultLock( DefaultLockManager manager, ReentrantReadWriteLock lock, File file, boolean write )
         {

@@ -163,17 +163,17 @@ public class DefaultFileLockManager
     public static class DefaultFileLock
         implements ExternalFileLock
     {
-        private DefaultFileLockManager manager;
 
-        private File file;
+        private final DefaultFileLockManager manager;
 
-        private boolean write;
+        private final File file;
+
+        private final boolean write;
 
         private FileLock lock;
 
         private DefaultFileLock( DefaultFileLockManager manager, File file, boolean write )
         {
-
             try
             {
                 file = file.getCanonicalFile();
