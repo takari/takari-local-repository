@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.channels.FileLockInterruptionException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,9 +40,9 @@ public class DefaultFileLockManager
     private final Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
 
     /**
-     * Construct with given
+     * Construct with given Logger.
      * 
-     * @param logger
+     * @param logger the logger to use.
      */
     public DefaultFileLockManager( Logger logger )
     {
@@ -104,7 +105,7 @@ public class DefaultFileLockManager
                 catch ( InterruptedException e )
                 {
                     Thread.currentThread().interrupt();
-                    return null;
+                    throw new FileLockInterruptionException();
                 }
             }
             fileLock = lookup( file, write );
