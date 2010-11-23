@@ -37,14 +37,12 @@ public class DefaultLockManager
 
     public Lock readLock( File file )
     {
-        ReentrantReadWriteLock lock = lookup( file, false );
-        return new DefaultLock( this, lock, file, false );
+        return new DefaultLock( this, file, false );
     }
 
     public Lock writeLock( File file )
     {
-        ReentrantReadWriteLock lock = lookup( file, true );
-        return new DefaultLock( this, lock, file, true );
+        return new DefaultLock( this, file, true );
     }
 
     private ReentrantReadWriteLock lookup( File file, boolean write )
@@ -100,7 +98,7 @@ public class DefaultLockManager
         implements Lock
     {
 
-        private final ReentrantReadWriteLock lock;
+        private ReentrantReadWriteLock lock;
 
         private final DefaultLockManager manager;
 
@@ -112,9 +110,17 @@ public class DefaultLockManager
 
         private final boolean write;
 
-        private DefaultLock( DefaultLockManager manager, ReentrantReadWriteLock lock, File file, boolean write )
+        private DefaultLock( DefaultLockManager manager, File file, boolean write )
         {
-            this.lock = lock;
+            try
+            {
+                file = file.getCanonicalFile();
+            }
+            catch ( IOException e )
+            {
+                // best effort - use absolute file
+                file = file.getAbsoluteFile();
+            }
             this.manager = manager;
             this.file = file;
             this.write = write;
@@ -135,7 +141,10 @@ public class DefaultLockManager
 
         private void lookup()
         {
-            manager.lookup( file, write );
+            if ( lock == null )
+            {
+                lock = manager.lookup( file, write );
+            }
             if ( write )
             {
                 wLock = lock.writeLock();
