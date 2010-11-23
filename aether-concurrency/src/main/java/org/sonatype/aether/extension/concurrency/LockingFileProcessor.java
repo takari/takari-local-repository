@@ -118,15 +118,10 @@ public class LockingFileProcessor
         ExternalFileLock srcLock = fileLockManager.readLock( src );
         ExternalFileLock targetLock = fileLockManager.writeLock( target );
 
-        boolean writeAcquired = false;
-        boolean readAcquired = false;
         try
         {
             readLock.lock();
-            readAcquired = true;
             writeLock.lock();
-            writeAcquired = true;
-
 
             mkdirs( target.getParentFile() );
 
@@ -154,14 +149,8 @@ public class LockingFileProcessor
             close( srcLock.channel() );
             close( targetLock.channel() );
 
-            if ( readAcquired )
-            {
-                unlock( readLock );
-            }
-            if ( writeAcquired )
-            {
-                unlock( writeLock );
-            }
+            unlock( readLock );
+            unlock( writeLock );
         }
     }
 
@@ -217,7 +206,6 @@ public class LockingFileProcessor
         ExternalFileLock lock = fileLockManager.writeLock( file );
 
         FileChannel channel = null;
-        boolean writeAcquired = false;
         try
         {
             mkdirs( file.getParentFile() );
@@ -227,7 +215,6 @@ public class LockingFileProcessor
             channel = lock.channel(); // out.getChannel();
 
             writeLock.lock();
-            writeAcquired = true;
 
             channel.truncate( 0 );
             if ( data != null )
@@ -241,10 +228,7 @@ public class LockingFileProcessor
 
             close( channel );
 
-            if ( writeAcquired )
-            {
-                unlock( writeLock );
-            }
+            unlock( writeLock );
         }
     }
 

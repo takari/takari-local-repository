@@ -204,7 +204,11 @@ public class DefaultFileLockManager
         public void unlock()
             throws IOException
         {
-            manager.remove( file );
+            if ( lock != null )
+            {
+                manager.remove( file );
+                lock = null;
+            }
         }
 
         public FileChannel channel()

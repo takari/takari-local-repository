@@ -133,4 +133,15 @@ public class DefaultFileLockManagerTest
         lock2.unlock();
         assertFalse( "manager failed to unlock, channel still open", channel.isOpen() );
     }
+
+    @Test
+    public void testSafeUnlockOfNonAcquiredLock()
+        throws IOException
+    {
+        File file = TestFileUtils.createTempFile( "" );
+
+        ExternalFileLock lock = manager.readLock( file );
+        lock.unlock();
+    }
+
 }
