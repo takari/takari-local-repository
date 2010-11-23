@@ -107,7 +107,7 @@ public class DefaultFileLockManager
         return fileLock;
     }
 
-    public FileLock newFileLock( File file, boolean write )
+    private FileLock newFileLock( File file, boolean write )
         throws IOException
     {
         RandomAccessFile raf;
@@ -160,6 +160,12 @@ public class DefaultFileLockManager
         }
     }
 
+    /**
+     * A Lock class using canonical files to obtain {@link FileLock}s via
+     * {@link DefaultFileLockManager#lookup(File, boolean)}.
+     * 
+     * @author Benjamin Hanzelmann
+     */
     public static class DefaultFileLock
         implements ExternalFileLock
     {
@@ -172,6 +178,13 @@ public class DefaultFileLockManager
 
         private FileLock lock;
 
+        /**
+         * Creates a Lock object with the canonical (or, if that fails, the absolute) file.
+         * 
+         * @param manager the FileLockManager to use, may not be {@code null}.
+         * @param file the file to lock. This will be changed to the canonical (or, if that fails, the absolute) file.
+         * @param write denotes if the lock is for read- or write-access.
+         */
         private DefaultFileLock( DefaultFileLockManager manager, File file, boolean write )
         {
             try
@@ -189,18 +202,18 @@ public class DefaultFileLockManager
             this.write = write;
         }
 
+        /**
+         * Uses {@link DefaultFileLockManager#lookup(File, boolean)} to lock.
+         */
         public void lock()
-            throws IOException
-        {
-            lookup();
-        }
-
-        private void lookup()
             throws IOException
         {
             lock = manager.lookup( file, write );
         }
 
+        /**
+         * Uses {@link DefaultFileLockManager#remove(File)} to unlock.
+         */
         public void unlock()
             throws IOException
         {
@@ -211,6 +224,11 @@ public class DefaultFileLockManager
             }
         }
 
+        /**
+         * Returns the FileChannel associated with the used {@link FileLock}.
+         * 
+         * @return the FileChannel associated with the used {@link FileLock}.
+         */
         public FileChannel channel()
         {
             if ( lock != null )
@@ -220,6 +238,11 @@ public class DefaultFileLockManager
             return null;
         }
 
+        /**
+         * Exposed for testing purposes.
+         * 
+         * @return the FileLock in use, may be {@code null}.
+         */
         protected FileLock getLock()
         {
             return lock;

@@ -21,14 +21,38 @@ import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 public interface FileLockManager
 {
 
+    /**
+     * This lock object adds the ability to directly access the {@link FileChannel} of the locked file.
+     * 
+     * @author Benjamin Hanzelmann
+     */
     public interface ExternalFileLock
         extends Lock
     {
+        /**
+         * Returns the channel for the locked file.
+         * 
+         * @return the channel for the locked file.
+         */
         FileChannel channel();
     }
 
+    /**
+     * Obtain a lock object that may be used to lock the target file for reading. This method must not lock that file
+     * right immediately (see {@link Lock#lock()}).
+     * 
+     * @param target the file to lock, never {@code null}.
+     * @return a lock object, never {@code null}.
+     */
     ExternalFileLock readLock( File target );
 
+    /**
+     * Obtain a lock object that may be used to lock the target file for writing. This method must not lock that file
+     * right immediately (see {@link Lock#lock()}).
+     * 
+     * @param target the file to lock, never {@code null}.
+     * @return a lock object, never {@code null}.
+     */
     ExternalFileLock writeLock( File target );
 
 }

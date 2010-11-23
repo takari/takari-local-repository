@@ -94,6 +94,11 @@ public class DefaultLockManager
         }
     }
 
+    /**
+     * A Lock class using {@link DefaultLockManager#lookup(File, boolean)} to obtain a {@link ReentrantReadWriteLock}.
+     * 
+     * @author Benjamin Hanzelmann
+     */
     public static class DefaultLock
         implements Lock
     {

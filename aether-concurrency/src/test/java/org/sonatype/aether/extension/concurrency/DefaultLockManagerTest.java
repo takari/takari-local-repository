@@ -49,7 +49,7 @@ public class DefaultLockManagerTest
         lockB.lock();
         lockA.unlock();
         lockB.unlock();
-        
+
         assertEquals( 0, manager.count.size() );
     }
 
@@ -239,4 +239,65 @@ public class DefaultLockManagerTest
         } );
     }
 
+    @Test
+    public void testMultipleLocksSameThread()
+        throws Throwable
+    {
+        final File a = new File( dir, "a/b" );
+        final File b = new File( dir, "a/c" );
+
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            private Lock r1;
+
+            private Lock r2;
+
+            private Lock w1;
+
+            private Lock w2;
+
+            public void thread1()
+                throws IOException
+            {
+                r1 = manager.readLock( a );
+                r2 = manager.readLock( a );
+                w1 = manager.writeLock( b );
+                w2 = manager.writeLock( b );
+                try
+                {
+
+                r1.lock();
+                r2.lock();
+                w1.lock();
+                w2.lock();
+
+                assertEquals( 2, manager.count.size() );
+                assertEquals( 2, manager.count.get( a.getCanonicalFile() ).get() );
+                assertEquals( 2, manager.count.get( b.getCanonicalFile() ).get() );
+                }
+                finally
+                {
+                    if ( w1 != null )
+                    {
+                        w1.unlock();
+                    }
+                    if ( w2 != null )
+                    {
+                        w2.unlock();
+                    }
+                    if ( r1 != null )
+                    {
+                        r1.unlock();
+                    }
+                    if ( r2 != null )
+                    {
+                        r2.unlock();
+                    }
+                }
+            }
+
+        } );
+
+        assertEquals( 0, manager.count.size() );
+    }
 }

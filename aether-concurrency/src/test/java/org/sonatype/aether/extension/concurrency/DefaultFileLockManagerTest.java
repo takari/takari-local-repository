@@ -18,8 +18,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonatype.aether.extension.concurrency.DefaultFileLockManager.DefaultFileLock;
 import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLock;
+import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.test.impl.SysoutLogger;
 import org.sonatype.aether.test.util.TestFileUtils;
+
+import edu.umd.cs.mtc.MultithreadedTestCase;
+import edu.umd.cs.mtc.TestFramework;
 
 @SuppressWarnings( "unused" )
 public class DefaultFileLockManagerTest
@@ -142,6 +146,75 @@ public class DefaultFileLockManagerTest
 
         ExternalFileLock lock = manager.readLock( file );
         lock.unlock();
+    }
+
+    @Test
+    public void testMultipleLocksSameThread()
+        throws Throwable
+    {
+        final File a = TestFileUtils.createTempFile( "a" );
+        final File b = TestFileUtils.createTempFile( "b" );
+
+        TestFramework.runOnce( new MultithreadedTestCase()
+        {
+            private DefaultFileLock r1;
+
+            private DefaultFileLock r2;
+
+            private DefaultFileLock w1;
+
+            private DefaultFileLock w2;
+
+            public void thread1()
+                throws IOException
+            {
+                r1 = (DefaultFileLock) manager.readLock( a );
+                r2 = (DefaultFileLock) manager.readLock( a );
+                w1 = (DefaultFileLock) manager.writeLock( b );
+                w2 = (DefaultFileLock) manager.writeLock( b );
+                try
+                {
+
+                    r1.lock();
+                    r2.lock();
+                    w1.lock();
+                    w2.lock();
+
+                    assertEquals( true, r1.getLock().isValid() );
+                    assertEquals( true, r2.getLock().isValid() );
+                    assertEquals( true, w1.getLock().isValid() );
+                    assertEquals( true, w2.getLock().isValid() );
+
+                    r1.unlock();
+                    assertEquals( true, r2.getLock().isValid() );
+                    r2.unlock();
+                    w1.unlock();
+                    assertEquals( true, w2.getLock().isValid() );
+                    w2.unlock();
+                }
+                finally
+                {
+                    if ( w1 != null )
+                    {
+                        w1.unlock();
+                    }
+                    if ( w2 != null )
+                    {
+                        w2.unlock();
+                    }
+                    if ( r1 != null )
+                    {
+                        r1.unlock();
+                    }
+                    if ( r2 != null )
+                    {
+                        r2.unlock();
+                    }
+                }
+            }
+
+        } );
+
     }
 
 }
