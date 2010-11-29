@@ -22,18 +22,17 @@ http://www.eclipse.org/legal/epl-v10.html
 
   <name>Aether :: Concurrency Extensions</name>
   <description>
-      This extension for Aether contains an installer that is safe for concurrent use.
+    This extension for Aether contains an installer that is safe for concurrent use.
   </description>
 
   <scm>
-      <connection>scm:git:git@github.com:sonatype/aether-concurrency.git</connection>
-      <developerConnection>scm:git:git@github.com:sonatype/aether-concurrency.git</developerConnection>
-      <url>http://github.com/sonatype/aether-concurrency</url>
+    <connection>scm:git:git@github.com:sonatype/aether-concurrency.git</connection>
+    <developerConnection>scm:git:git@github.com:sonatype/aether-concurrency.git</developerConnection>
+    <url>http://github.com/sonatype/aether-concurrency</url>
   </scm>
 
-
   <properties>
-      <aether.version>1.8</aether.version>
+    <aether.version>1.8</aether.version>
   </properties>
 
   <dependencies>
@@ -76,8 +75,8 @@ http://www.eclipse.org/legal/epl-v10.html
       <scope>test</scope>
     </dependency>
     <dependency>
-    	<groupId>org.sonatype.aether</groupId>
-    	<artifactId>aether-impl</artifactId>
+      <groupId>org.sonatype.aether</groupId>
+      <artifactId>aether-impl</artifactId>
       <version>${aether.version}</version>
     </dependency>
   </dependencies>
