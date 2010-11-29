@@ -406,9 +406,9 @@ public class LockingInstaller
                     mark( a, dstFile );
 
                     // no temporary -> unchanged src file, no error
-                    if ( transFile.exists() && !transFile.renameTo( dstFile ) )
+                    if ( transFile.exists() )
                     {
-                        fileProcessor.copy( transFile, dstFile, null );
+                        fileProcessor.move( transFile, dstFile );
                         dstFile.setLastModified( transFile.lastModified() );
                     }
 
@@ -446,10 +446,7 @@ public class LockingInstaller
                     sanity( dstFile, transFile );
                     mark( m, dstFile );
 
-                    if ( !transFile.renameTo( dstFile ) )
-                    {
-                        fileProcessor.copy( transFile, dstFile, null );
-                    }
+                    fileProcessor.move( transFile, dstFile );
                 }
                 catch ( Exception e )
                 {
