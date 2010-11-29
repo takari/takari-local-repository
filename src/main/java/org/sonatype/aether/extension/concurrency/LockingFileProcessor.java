@@ -94,7 +94,6 @@ public class LockingFileProcessor
         return FileUtils.mkdirs( directory );
     }
 
-
     /**
      * Copy src- to target-file. Creates the necessary directories for the target file. In case of an error, the created
      * directories will be left on the file system.
@@ -111,7 +110,6 @@ public class LockingFileProcessor
     public long copy( File src, File target, ProgressListener listener )
         throws IOException
     {
-
         Lock readLock = lockManager.readLock( src );
         Lock writeLock = lockManager.writeLock( target );
 
@@ -128,9 +126,9 @@ public class LockingFileProcessor
             srcLock.lock();
             targetLock.lock();
 
-            FileChannel srcChannel = srcLock.channel();// in.getChannel();
+            FileChannel srcChannel = srcLock.channel();
 
-            FileChannel outChannel = targetLock.channel();// out.getChannel();
+            FileChannel outChannel = targetLock.channel();
             outChannel.truncate( 0 );
 
             WritableByteChannel realChannel = outChannel;
@@ -212,7 +210,7 @@ public class LockingFileProcessor
 
             lock.lock();
 
-            channel = lock.channel(); // out.getChannel();
+            channel = lock.channel();
 
             writeLock.lock();
 
@@ -280,6 +278,7 @@ public class LockingFileProcessor
             return count;
         }
     }
+
     /**
      * Sets the logger to use for this component.
      * 
