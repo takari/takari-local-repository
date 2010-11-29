@@ -408,8 +408,9 @@ public class LockingInstaller
                     // no temporary -> unchanged src file, no error
                     if ( transFile.exists() )
                     {
+                        long ts = transFile.lastModified();
                         fileProcessor.move( transFile, dstFile );
-                        dstFile.setLastModified( transFile.lastModified() );
+                        dstFile.setLastModified( ts );
                     }
 
                     lrm.add( session, ctx.getRegistrations().get( a ) );
