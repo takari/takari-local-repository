@@ -129,7 +129,6 @@ public class LockingFileProcessor
             FileChannel srcChannel = srcLock.channel();
 
             FileChannel outChannel = targetLock.channel();
-            outChannel.truncate( 0 );
 
             WritableByteChannel realChannel = outChannel;
             if ( listener != null )
@@ -137,7 +136,14 @@ public class LockingFileProcessor
                 realChannel = new ProgressingChannel( outChannel, listener );
             }
 
-            return copy( srcChannel, realChannel );
+            long total = copy( srcChannel, realChannel );
+
+            /*
+             * NOTE: For graceful collaboration with concurrent readers, truncate file after write and not before.
+             */
+            outChannel.truncate( total );
+
+            return total;
         }
         finally
         {
@@ -153,7 +159,7 @@ public class LockingFileProcessor
     }
 
     /**
-     * Copy src- to target-channel.
+     * Copy src to target channel. Its the responsibility of the caller to close the channels.
      * 
      * @param src the channel to copy from, must not be {@code null}.
      * @param target the channel to copy to, must not be {@code null}.
@@ -165,27 +171,19 @@ public class LockingFileProcessor
     {
         long total = 0;
 
-        try
-        {
-            long size = src.size();
+        long size = src.size();
 
-            // copy large files in chunks to not run into Java Bug 4643189
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4643189
-            // use even smaller chunks to work around bug with SMB shares
-            // http://forums.sun.com/thread.jspa?threadID=439695
-            long chunk = ( 64 * 1024 * 1024 ) - ( 32 * 1024 );
+        // copy large files in chunks to not run into Java Bug 4643189
+        // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4643189
+        // use even smaller chunks to work around bug with SMB shares
+        // http://forums.sun.com/thread.jspa?threadID=439695
+        long chunk = ( 64 * 1024 * 1024 ) - ( 32 * 1024 );
 
-            do
-            {
-                total += src.transferTo( total, chunk, target );
-            }
-            while ( total < size );
-        }
-        finally
+        do
         {
-            close( src );
-            close( target );
+            total += src.transferTo( total, chunk, target );
         }
+        while ( total < size );
 
         return total;
     }
@@ -214,11 +212,12 @@ public class LockingFileProcessor
 
             writeLock.lock();
 
-            channel.truncate( 0 );
             if ( data != null )
             {
                 channel.write( ByteBuffer.wrap( data.getBytes( "UTF-8" ) ) );
             }
+
+            channel.truncate( channel.position() );
         }
         finally
         {
@@ -233,11 +232,16 @@ public class LockingFileProcessor
     public void move( File source, File target )
         throws IOException
     {
-        target.delete();
+        /*
+         * NOTE: For graceful collaboration with concurrent readers don't attempt to delete the target file, if it
+         * already exists, it's safer to just overwrite it.
+         */
 
         if ( !source.renameTo( target ) )
         {
             copy( source, target, null );
+
+            target.setLastModified( source.lastModified() );
 
             source.delete();
         }
