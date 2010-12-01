@@ -25,6 +25,12 @@ import org.sonatype.aether.spi.log.Logger;
 import org.sonatype.aether.spi.log.NullLogger;
 
 /**
+ * Offers advisory file locking independently of the platform. With regard to concurrent readers that don't use any file
+ * locking (i.e. 3rd party code accessing files), mandatory locking (as seen on Windows) must be avoided as this would
+ * immediately kill the unaware readers. To emulate advisory locking, this implementation uses a dedicated lock file
+ * (*.aetherlock) next to the actual file. The inter-process file locking is performed on this lock file, thereby
+ * keeping the data file free from locking.
+ * 
  * @author Benjamin Bentmann
  */
 @Component( role = FileLockManager.class )
