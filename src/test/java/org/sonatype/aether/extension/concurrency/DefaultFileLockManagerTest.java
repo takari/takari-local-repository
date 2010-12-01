@@ -16,7 +16,7 @@ import java.nio.channels.FileChannel;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sonatype.aether.extension.concurrency.DefaultFileLockManager.DefaultFileLock;
+import org.sonatype.aether.extension.concurrency.DefaultFileLockManager.IndirectFileLock;
 import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLock;
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 import org.sonatype.aether.test.impl.SysoutLogger;
@@ -111,9 +111,9 @@ public class DefaultFileLockManagerTest
             public void thread1()
                 throws IOException
             {
-                DefaultFileLock lock = (DefaultFileLock) manager.readLock( file );
+                ExternalFileLock lock = manager.readLock( file );
                 lock.lock();
-                assertTrue( "read lock is not shared", lock.getLock().isShared() );
+                assertTrue( "read lock is not shared", lock.isShared() );
                 waitForTick( 2 );
                 lock.unlock();
             }
@@ -122,10 +122,10 @@ public class DefaultFileLockManagerTest
                 throws IOException
             {
                 waitForTick( 1 );
-                DefaultFileLock lock = (DefaultFileLock) manager.writeLock( file );
+                ExternalFileLock lock = manager.writeLock( file );
                 lock.lock();
                 assertTick( 2 );
-                assertTrue( "read lock did not upgrade to exclusive", !lock.getLock().isShared() );
+                assertTrue( "read lock did not upgrade to exclusive", !lock.isShared() );
                 lock.unlock();
             }
         } );
@@ -138,20 +138,29 @@ public class DefaultFileLockManagerTest
         File file1 = TestFileUtils.createTempFile( "testCanonicalFileLock" );
         File file2 = new File( file1.getParent() + File.separator + ".", file1.getName() );
 
-        ExternalFileLock lock1 = manager.writeLock( file1 );
-        ExternalFileLock lock2 = manager.writeLock( file2 );
-        lock1.lock();
-        FileChannel channel = lock1.channel();
+        IndirectFileLock lock1 = (IndirectFileLock) manager.readLock( file1 );
+        IndirectFileLock lock2 = (IndirectFileLock) manager.readLock( file2 );
 
+        lock1.lock();
         lock2.lock();
-        assertEquals( channel, lock2.channel() );
+
+        FileChannel channel1 = lock1.channel();
+        FileChannel channel2 = lock2.channel();
+
+        assertNotSame( channel1, channel2 );
+        assertSame( lock1.getLock(), lock2.getLock() );
 
         lock1.unlock();
-        assertTrue( channel.isOpen() );
-        assertTrue( lock2.channel().isOpen() );
+        assertNull( lock1.channel() );
+        assertFalse( channel1.isOpen() );
+
+        assertTrue( lock2.getLock().isValid() );
+        assertNotNull( lock2.channel() );
+        assertTrue( channel2.isOpen() );
 
         lock2.unlock();
-        assertFalse( "manager failed to unlock, channel still open", channel.isOpen() );
+        assertNull( lock2.channel() );
+        assertFalse( channel2.isOpen() );
     }
 
     @Test
@@ -173,21 +182,21 @@ public class DefaultFileLockManagerTest
 
         TestFramework.runOnce( new MultithreadedTestCase()
         {
-            private DefaultFileLock r1;
+            private IndirectFileLock r1;
 
-            private DefaultFileLock r2;
+            private IndirectFileLock r2;
 
-            private DefaultFileLock w1;
+            private IndirectFileLock w1;
 
-            private DefaultFileLock w2;
+            private IndirectFileLock w2;
 
             public void thread1()
                 throws IOException
             {
-                r1 = (DefaultFileLock) manager.readLock( a );
-                r2 = (DefaultFileLock) manager.readLock( a );
-                w1 = (DefaultFileLock) manager.writeLock( b );
-                w2 = (DefaultFileLock) manager.writeLock( b );
+                r1 = (IndirectFileLock) manager.readLock( a );
+                r2 = (IndirectFileLock) manager.readLock( a );
+                w1 = (IndirectFileLock) manager.writeLock( b );
+                w2 = (IndirectFileLock) manager.writeLock( b );
                 try
                 {
 
@@ -196,8 +205,11 @@ public class DefaultFileLockManagerTest
                     w1.lock();
                     w2.lock();
 
+                    assertSame( r1.getLock(), r2.getLock() );
                     assertEquals( true, r1.getLock().isValid() );
                     assertEquals( true, r2.getLock().isValid() );
+
+                    assertSame( w1.getLock(), w2.getLock() );
                     assertEquals( true, w1.getLock().isValid() );
                     assertEquals( true, w2.getLock().isValid() );
 

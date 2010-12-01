@@ -58,17 +58,7 @@ public class LockingFileProcessor
 
     private void close( Closeable closeable )
     {
-        if ( closeable != null )
-        {
-            try
-            {
-                closeable.close();
-            }
-            catch ( IOException e )
-            {
-                logger.warn( "Failed to close file: " + e );
-            }
-        }
+        FileUtils.close( closeable, logger );
     }
 
     private void unlock( LockManager.Lock lock )

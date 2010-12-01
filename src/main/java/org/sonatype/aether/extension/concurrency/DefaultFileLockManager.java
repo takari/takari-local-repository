@@ -16,262 +16,35 @@ import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
+import org.sonatype.aether.spi.locator.Service;
+import org.sonatype.aether.spi.locator.ServiceLocator;
 import org.sonatype.aether.spi.log.Logger;
 import org.sonatype.aether.spi.log.NullLogger;
 
 /**
- * A lock manager using {@link ExternalFileLock}s for inter-process locking.
- * 
- * @author Benjamin Hanzelmann
+ * @author Benjamin Bentmann
  */
 @Component( role = FileLockManager.class )
 public class DefaultFileLockManager
-    implements FileLockManager
+    implements FileLockManager, Service
 {
+
     @Requirement
     private Logger logger = NullLogger.INSTANCE;
 
-    private final Map<File, FileLock> filelocks = new HashMap<File, FileLock>();
+    private final Map<File, LockFile> lockFiles = new HashMap<File, LockFile>( 64 );
 
-    private final Map<File, AtomicInteger> count = new HashMap<File, AtomicInteger>();
-
-    /**
-     * Construct with given Logger.
-     * 
-     * @param logger the logger to use.
-     */
-    public DefaultFileLockManager( Logger logger )
-    {
-        super();
-        setLogger( logger );
-    }
-
-    /**
-     * Enable default constructor.
-     */
     public DefaultFileLockManager()
     {
-        super();
+        // enables no-arg constructor
     }
 
-    public ExternalFileLock readLock( File file )
+    public DefaultFileLockManager( Logger logger )
     {
-        return new DefaultFileLock( this, file, false );
-    }
-
-    public ExternalFileLock writeLock( File file )
-    {
-        return new DefaultFileLock( this, file, true );
-    }
-
-    private FileLock lookup( File file, boolean write )
-        throws IOException
-    {
-        FileLock fileLock = null;
-
-        boolean upgrade = false;
-
-        synchronized ( filelocks )
-        {
-            fileLock = filelocks.get( file );
-            if ( fileLock == null || !fileLock.isValid() )
-            {
-                fileLock = newFileLock( file, write );
-                filelocks.put( file, fileLock );
-                incrementRef( file );
-            }
-            else if ( write && fileLock.isShared() )
-            {
-                upgrade = true;
-            }
-            else
-            {
-                incrementRef( file );
-            }
-        }
-
-        while ( upgrade && fileLock.isShared() )
-        {
-            synchronized ( fileLock )
-            {
-                try
-                {
-                    fileLock.wait();
-                }
-                catch ( InterruptedException e )
-                {
-                    Thread.currentThread().interrupt();
-                    throw new FileLockInterruptionException();
-                }
-            }
-            fileLock = lookup( file, write );
-        }
-        return fileLock;
-    }
-
-    public void incrementRef( File file )
-    {
-        AtomicInteger c = count.get( file );
-        if ( c == null )
-        {
-            c = new AtomicInteger( 1 );
-            count.put( file, c );
-        }
-        else
-        {
-            c.incrementAndGet();
-        }
-    }
-
-    private FileLock newFileLock( File file, boolean write )
-        throws IOException
-    {
-        RandomAccessFile raf;
-        String mode;
-        FileChannel channel;
-        if ( write )
-        {
-            FileUtils.mkdirs( file.getParentFile() );
-            mode = "rw";
-        }
-        else
-        {
-            mode = "r";
-        }
-        raf = new RandomAccessFile( file, mode );
-        channel = raf.getChannel();
-
-        try
-        {
-            // lock only file size http://bugs.sun.com/view_bug.do?bug_id=6628575
-            return channel.lock( 0, Math.max( 1, channel.size() ), !write );
-        }
-        catch ( IOException e )
-        {
-            raf.close();
-            throw e;
-        }
-    }
-
-    private void remove( File file )
-        throws IOException
-    {
-        synchronized ( filelocks )
-        {
-            AtomicInteger c = count.get( file );
-            if ( c == null )
-            {
-                logger.warn( String.format( "Unable to retrieve the lock for file %s", file.getAbsolutePath() ) );
-            }
-            else if ( c.decrementAndGet() == 0 )
-            {
-                count.remove( file );
-                FileLock lock = filelocks.remove( file );
-                if ( lock.channel().isOpen() )
-                {
-                    lock.release();
-                    lock.channel().close();
-                }
-                synchronized ( lock )
-                {
-                    lock.notify();
-                }
-            }
-        }
-    }
-
-    /**
-     * A Lock class using canonical files to obtain {@link FileLock}s via
-     * {@link DefaultFileLockManager#lookup(File, boolean)}.
-     * 
-     * @author Benjamin Hanzelmann
-     */
-    public static class DefaultFileLock
-        implements ExternalFileLock
-    {
-
-        private final DefaultFileLockManager manager;
-
-        private final File file;
-
-        private final boolean write;
-
-        private FileLock lock;
-
-        /**
-         * Creates a Lock object with the canonical (or, if that fails, the absolute) file.
-         * 
-         * @param manager the FileLockManager to use, may not be {@code null}.
-         * @param file the file to lock. This will be changed to the canonical (or, if that fails, the absolute) file.
-         * @param write denotes if the lock is for read- or write-access.
-         */
-        private DefaultFileLock( DefaultFileLockManager manager, File file, boolean write )
-        {
-            try
-            {
-                file = file.getCanonicalFile();
-            }
-            catch ( IOException e )
-            {
-                // best effort - use absolute file
-                file = file.getAbsoluteFile();
-            }
-
-            this.manager = manager;
-            this.file = file;
-            this.write = write;
-        }
-
-        /**
-         * Uses {@link DefaultFileLockManager#lookup(File, boolean)} to lock.
-         */
-        public void lock()
-            throws IOException
-        {
-            lock = manager.lookup( file, write );
-        }
-
-        /**
-         * Uses {@link DefaultFileLockManager#remove(File)} to unlock.
-         */
-        public void unlock()
-            throws IOException
-        {
-            if ( lock != null )
-            {
-                manager.remove( file );
-                lock = null;
-            }
-        }
-
-        /**
-         * Returns the FileChannel associated with the used {@link FileLock}.
-         * 
-         * @return the FileChannel associated with the used {@link FileLock}.
-         */
-        public FileChannel channel()
-        {
-            if ( lock != null )
-            {
-                return lock.channel();
-            }
-            return null;
-        }
-
-        /**
-         * Exposed for testing purposes.
-         * 
-         * @return the FileLock in use, may be {@code null}.
-         */
-        protected FileLock getLock()
-        {
-            return lock;
-        }
-
+        setLogger( logger );
     }
 
     /**
@@ -282,6 +55,356 @@ public class DefaultFileLockManager
     public void setLogger( Logger logger )
     {
         this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
+    }
+
+    public void initService( ServiceLocator locator )
+    {
+        setLogger( locator.getService( Logger.class ) );
+    }
+
+    public ExternalFileLock readLock( File target )
+    {
+        return new IndirectFileLock( normalize( target ), false );
+    }
+
+    public ExternalFileLock writeLock( File target )
+    {
+        return new IndirectFileLock( normalize( target ), true );
+    }
+
+    private File normalize( File file )
+    {
+        try
+        {
+            return file.getCanonicalFile();
+        }
+        catch ( IOException e )
+        {
+            return file.getAbsoluteFile();
+        }
+    }
+
+    LockFile lock( File file, boolean write )
+        throws IOException
+    {
+        while ( true )
+        {
+            LockFile lockFile;
+
+            synchronized ( lockFiles )
+            {
+                lockFile = lockFiles.get( file );
+
+                if ( lockFile == null )
+                {
+                    lockFile = new LockFile( file, write );
+
+                    lockFiles.put( file, lockFile );
+
+                    return lockFile;
+                }
+                else if ( lockFile.isReentrant( write ) )
+                {
+                    lockFile.incRefCount();
+
+                    return lockFile;
+                }
+            }
+
+            synchronized ( lockFile )
+            {
+                try
+                {
+                    lockFile.wait();
+                }
+                catch ( InterruptedException e )
+                {
+                    Thread.currentThread().interrupt();
+                    throw new FileLockInterruptionException();
+                }
+            }
+        }
+    }
+
+    void unlock( File file )
+        throws IOException
+    {
+        LockFile closedFile = null;
+
+        try
+        {
+            synchronized ( lockFiles )
+            {
+                LockFile lockFile = lockFiles.get( file );
+
+                if ( lockFile != null )
+                {
+                    if ( lockFile.decRefCount() <= 0 )
+                    {
+                        lockFiles.remove( file );
+
+                        closedFile = lockFile;
+                        lockFile.close();
+                    }
+                }
+                else
+                {
+                    logger.debug( "Unbalanced unlock on " + file );
+                }
+            }
+        }
+        finally
+        {
+            if ( closedFile != null )
+            {
+                synchronized ( closedFile )
+                {
+                    closedFile.notifyAll();
+                }
+            }
+        }
+    }
+
+    class IndirectFileLock
+        implements ExternalFileLock
+    {
+
+        private final File file;
+
+        private final boolean write;
+
+        private FileChannel channel;
+
+        private LockFile lockFile;
+
+        private int nesting;
+
+        public IndirectFileLock( File file, boolean write )
+        {
+            this.file = file;
+            this.write = write;
+        }
+
+        public synchronized void lock()
+            throws IOException
+        {
+            if ( channel == null )
+            {
+                open();
+                nesting = 1;
+            }
+            else
+            {
+                nesting++;
+            }
+        }
+
+        private void open()
+            throws IOException
+        {
+            lockFile = DefaultFileLockManager.this.lock( file, write );
+
+            channel = new RandomAccessFile( file, write ? "rw" : "r" ).getChannel();
+        }
+
+        public synchronized void unlock()
+            throws IOException
+        {
+            nesting--;
+            if ( nesting <= 0 )
+            {
+                close();
+            }
+        }
+
+        private void close()
+            throws IOException
+        {
+            try
+            {
+                if ( channel != null )
+                {
+                    FileChannel tmp = channel;
+                    channel = null;
+                    tmp.close();
+                }
+            }
+            finally
+            {
+                if ( lockFile != null )
+                {
+                    lockFile = null;
+
+                    try
+                    {
+                        DefaultFileLockManager.this.unlock( file );
+                    }
+                    catch ( IOException e )
+                    {
+                        logger.warn( "Failed to release lock for " + file + ": " + e );
+                    }
+                }
+            }
+        }
+
+        public FileChannel channel()
+        {
+            return channel;
+        }
+
+        public boolean isShared()
+        {
+            if ( lockFile == null )
+            {
+                throw new IllegalStateException( "lock not acquired" );
+            }
+            return lockFile.fileLock.isShared();
+        }
+
+        public FileLock getLock()
+        {
+            if ( lockFile == null )
+            {
+                return null;
+            }
+            return lockFile.fileLock;
+        }
+
+        @Override
+        protected void finalize()
+            throws Throwable
+        {
+            try
+            {
+                close();
+            }
+            finally
+            {
+                super.finalize();
+            }
+        }
+
+    }
+
+    class LockFile
+    {
+
+        final File lockFile;
+
+        final FileLock fileLock;
+
+        private final Thread owner;
+
+        private int refCount;
+
+        LockFile( File dataFile, boolean write )
+            throws IOException
+        {
+            refCount = 1;
+
+            owner = write ? Thread.currentThread() : null;
+
+            if ( dataFile.isDirectory() )
+            {
+                lockFile = new File( dataFile, ".aetherlock" );
+            }
+            else
+            {
+                lockFile = new File( dataFile.getPath() + ".aetherlock" );
+            }
+
+            FileUtils.mkdirs( lockFile.getParentFile() );
+
+            RandomAccessFile raf = new RandomAccessFile( lockFile, "rw" );
+
+            try
+            {
+                fileLock = raf.getChannel().lock( 0, 1, !write );
+            }
+            catch ( IOException e )
+            {
+                FileUtils.close( raf, null );
+                delete();
+                throw e;
+            }
+        }
+
+        void close()
+            throws IOException
+        {
+            if ( fileLock != null )
+            {
+                try
+                {
+                    if ( fileLock.isValid() )
+                    {
+                        fileLock.release();
+                    }
+                }
+                catch ( IOException e )
+                {
+                    logger.warn( "Failed to release lock on " + lockFile + ": " + e );
+                }
+
+                try
+                {
+                    fileLock.channel().close();
+                }
+                finally
+                {
+                    delete();
+                }
+            }
+        }
+
+        private void delete()
+        {
+            if ( lockFile != null )
+            {
+                if ( !lockFile.delete() && lockFile.exists() )
+                {
+                    lockFile.deleteOnExit();
+                }
+            }
+        }
+
+        boolean isReentrant( boolean write )
+        {
+            if ( !write && fileLock.isShared() )
+            {
+                return true;
+            }
+            else if ( write && !fileLock.isShared() && Thread.currentThread() == owner )
+            {
+                return true;
+            }
+            return false;
+        }
+
+        int incRefCount()
+        {
+            return ++refCount;
+        }
+
+        int decRefCount()
+        {
+            return --refCount;
+        }
+
+        @Override
+        protected void finalize()
+            throws Throwable
+        {
+            try
+            {
+                close();
+            }
+            finally
+            {
+                super.finalize();
+            }
+        }
+
     }
 
 }

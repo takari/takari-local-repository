@@ -15,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
 import org.junit.After;
@@ -618,7 +619,8 @@ public class LockingFileProcessorTest
     {
         File src = TestFileUtils.createTempFile( "testFailTargetIsDirectory" );
         File target = TestFileUtils.createTempDir();
-        try {
+        try
+        {
             fileProcessor.copy( src, target, null );
             fail( "Expected FileNotFoundException (target is dir)" );
         }
@@ -654,4 +656,68 @@ public class LockingFileProcessorTest
             TestFileUtils.delete( target );
         }
     }
+
+    /**
+     * Checks for graceful operation when the target file of a write operation is currently read by some 3rd party
+     * process which doesn't do any locking of the file.
+     */
+    @Test
+    public void testCopyWhenDestinationFileIsCurrentlyReadByOtherProcess()
+        throws Exception
+    {
+        String contents = "testCopyWhenDestinationFileIsCurrentlyReadByOtherProcess";
+
+        File source = TestFileUtils.createTempFile( contents );
+
+        File target = TestFileUtils.createTempFile( contents );
+
+        final RandomAccessFile raf = new RandomAccessFile( target, "r" );
+        final AtomicBoolean read = new AtomicBoolean();
+        try
+        {
+            fileProcessor.copy( source, new File( target.getCanonicalPath() )
+            {
+                boolean failed;
+
+                @Override
+                public File getCanonicalFile()
+                    throws IOException
+                {
+                    return this;
+                }
+
+                @Override
+                public int hashCode()
+                {
+                    /*
+                     * NOTE: This exploits implementation details of the DefaultFileLockManager which will first acquire
+                     * the file lock and then update a hash map with the canonical file as key, thereby invoking this
+                     * method. If there's a more robust way to read the file after the lock has been acquired, you're to
+                     * replace this code.
+                     */
+                    try
+                    {
+                        read.set( true );
+                        raf.read();
+                    }
+                    catch ( IOException e )
+                    {
+                        if ( !failed )
+                        {
+                            failed = true;
+                            throw new AssertionError( e );
+                        }
+                    }
+                    return super.hashCode();
+                }
+            }, null );
+        }
+        finally
+        {
+            raf.close();
+        }
+
+        assertTrue( "Custom java.io.File hasn't been called, test setup invalid", read.get() );
+    }
+
 }

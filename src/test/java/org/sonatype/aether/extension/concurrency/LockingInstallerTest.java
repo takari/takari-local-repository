@@ -63,9 +63,9 @@ public class LockingInstallerTest
 
     private Logger logger;
 
-    private DefaultLockManager lockManager;
+    private LockManager lockManager;
 
-    private DefaultFileLockManager fileLockManager;
+    private FileLockManager fileLockManager;
 
     private File localArtifactFile;
 

@@ -8,14 +8,16 @@ package org.sonatype.aether.extension.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 
+import org.sonatype.aether.spi.log.Logger;
+
 /**
  * @author Benjamin Hanzelmann
- *
  */
-public class FileUtils
+class FileUtils
 {
 
     /**
@@ -55,6 +57,24 @@ public class FileUtils
 
         File parentDir = canonDir.getParentFile();
         return ( parentDir != null && ( mkdirs( parentDir ) || parentDir.exists() ) && canonDir.mkdir() );
+    }
+
+    public static void close( Closeable closeable, Logger logger )
+    {
+        if ( closeable != null )
+        {
+            try
+            {
+                closeable.close();
+            }
+            catch ( IOException e )
+            {
+                if ( logger != null )
+                {
+                    logger.warn( "Failed to close file: " + e );
+                }
+            }
+        }
     }
 
 }

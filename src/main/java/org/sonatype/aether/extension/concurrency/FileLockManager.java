@@ -35,6 +35,13 @@ public interface FileLockManager
          * @return the channel for the locked file.
          */
         FileChannel channel();
+
+        /**
+         * Tells whether the lock is shared or exclusive.
+         * 
+         * @return {@code true} if the lock is shared, {@code false} if the lock is exclusive.
+         */
+        boolean isShared();
     }
 
     /**

@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -230,7 +231,7 @@ public class LockingInstaller
                         }
                         catch ( IOException e )
                         {
-                            throw new InstallationException( "Could not install " + metadata.toString(), e );
+                            throw new InstallationException( "Could not install " + metadata, e );
                         }
                         install( session, metadata );
                         processedMetadata.put( metadata, null );
@@ -672,14 +673,27 @@ public class LockingInstaller
 
         try
         {
+            Collection<File> gidFiles = new HashSet<File>();
             for ( Artifact a : artifacts )
             {
-                filelock( locks, gidFile( session, a.getGroupId() ) );
+                gidFiles.add( gidFile( session, a.getGroupId() ) );
+            }
+            for ( Metadata m : metadata )
+            {
+                gidFiles.add( gidFile( session, m.getGroupId() ) );
+            }
+
+            for ( File gidFile : gidFiles )
+            {
+                filelock( locks, gidFile );
+            }
+
+            for ( Artifact a : artifacts )
+            {
                 lock( session, locks, a );
             }
             for ( Metadata m : metadata )
             {
-                filelock( locks, gidFile( session, m.getGroupId() ) );
                 lock( session, locks, m );
             }
         }

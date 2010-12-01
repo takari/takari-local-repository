@@ -13,10 +13,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
 
-
 /**
  * @author Benjamin Hanzelmann
- *
  */
 public class ExternalProcessFileLock
     extends ForkJvm
@@ -25,15 +23,12 @@ public class ExternalProcessFileLock
     public static void main( String[] args )
         throws IOException, InterruptedException
     {
-        String path = args[0];
+        String path = args[0] + ".aetherlock";
         String time = args[1];
 
         File file = new File( path );
-        if ( !file.exists() )
-        {
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-        }
+
+        file.getParentFile().mkdirs();
 
         int millis = Integer.valueOf( time );
 
