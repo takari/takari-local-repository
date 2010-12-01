@@ -522,21 +522,19 @@ public class LockingInstallerTest
         throws InterruptedException, IOException, InstallationException
     {
         int wait = 1500;
-        ExternalProcessFileLock ext = new ExternalProcessFileLock();
         request.addArtifact( artifact );
 
         File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
-        process = ext.lockFile( lockfile.getAbsolutePath(), wait );
-        long start = System.currentTimeMillis();
+        ExternalProcessFileLock ext = new ExternalProcessFileLock( lockfile );
+        process = ext.lockFile( wait );
 
-        // give external lock time to initialize
-        Thread.sleep( 500 );
+        long start = ext.awaitLock();
 
         installer.install( session, request );
 
         long end = System.currentTimeMillis();
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
-        assertTrue( message, end > start + ( wait - 100 ) );
+        assertTrue( message, end - start > wait );
     }
 
     @Test
@@ -544,23 +542,20 @@ public class LockingInstallerTest
         throws InstallationException, InterruptedException, IOException
     {
         int wait = 1500;
-        ExternalProcessFileLock ext = new ExternalProcessFileLock();
         request.addMetadata( metadata );
 
         File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
-        process = ext.lockFile( lockfile.getAbsolutePath(), wait );
+        ExternalProcessFileLock ext = new ExternalProcessFileLock( lockfile );
+        process = ext.lockFile( wait );
 
-        long start = System.currentTimeMillis();
-
-        // give external lock time to initialize
-        Thread.sleep( 500 );
+        long start = ext.awaitLock();
 
         installer.install( session, request );
 
         long end = System.currentTimeMillis();
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
-        assertTrue( message, end > start + ( wait - 100 ) );
+        assertTrue( message, end - start > wait );
     }
 
 }

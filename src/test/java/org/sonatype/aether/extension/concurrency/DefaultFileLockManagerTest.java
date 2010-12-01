@@ -47,18 +47,15 @@ public class DefaultFileLockManagerTest
         throws InterruptedException, IOException
     {
         int wait = 1500;
-        ExternalProcessFileLock ext = new ExternalProcessFileLock();
 
         File file = TestFileUtils.createTempFile( "" );
 
         ExternalFileLock lock = manager.readLock( file );
 
-        process = ext.lockFile( file.getAbsolutePath(), wait );
+        ExternalProcessFileLock ext = new ExternalProcessFileLock( file );
+        process = ext.lockFile( wait );
 
-        long start = System.currentTimeMillis();
-
-        // give external lock time to initialize
-        Thread.sleep( 500 );
+        long start = ext.awaitLock();
 
         lock.lock();
 
@@ -68,8 +65,7 @@ public class DefaultFileLockManagerTest
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
 
-        assertTrue( message, end > start + ( wait - 100 ) );
-
+        assertTrue( message, end - start > wait );
     }
 
     @Test
@@ -77,18 +73,15 @@ public class DefaultFileLockManagerTest
         throws InterruptedException, IOException
     {
         int wait = 1500;
-        ExternalProcessFileLock ext = new ExternalProcessFileLock();
 
         File file = TestFileUtils.createTempFile( "" );
 
-        process = ext.lockFile( file.getAbsolutePath(), wait );
+        ExternalProcessFileLock ext = new ExternalProcessFileLock( file );
+        process = ext.lockFile( wait );
 
         ExternalFileLock lock = manager.writeLock( file );
 
-        long start = System.currentTimeMillis();
-
-        // give external lock time to initialize
-        Thread.sleep( 500 );
+        long start = ext.awaitLock();
 
         lock.lock();
 
@@ -97,7 +90,7 @@ public class DefaultFileLockManagerTest
         lock.unlock();
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
-        assertTrue( message, end > start + ( wait - 100 ) );
+        assertTrue( message, end - start > wait );
     }
 
     @Test

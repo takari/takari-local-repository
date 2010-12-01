@@ -555,26 +555,24 @@ public class LockingFileProcessorTest
         throws InterruptedException, IOException
     {
         int wait = 1500;
-        ExternalProcessFileLock ext = new ExternalProcessFileLock();
 
         File srcFile = TestFileUtils.createTempFile( "" );
         File targetFile = TestFileUtils.createTempFile( "" );
 
-        process = ext.lockFile( srcFile.getAbsolutePath(), wait );
+        ExternalProcessFileLock ext = new ExternalProcessFileLock( srcFile );
+        process = ext.lockFile( wait );
 
-        long start = System.currentTimeMillis();
-
-        // give external lock time to initialize
-        Thread.sleep( 500 );
+        long start = ext.awaitLock();
 
         fileProcessor.copy( srcFile, targetFile, null );
 
         long end = System.currentTimeMillis();
 
+        assertEquals( 0, process.waitFor() );
+
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
 
-        assertTrue( message, end > start + ( wait - 100 ) );
-
+        assertTrue( message, end - start > wait );
     }
 
     @Test
@@ -582,24 +580,23 @@ public class LockingFileProcessorTest
         throws InterruptedException, IOException
     {
         int wait = 1500;
-        ExternalProcessFileLock ext = new ExternalProcessFileLock();
 
         File srcFile = TestFileUtils.createTempFile( "" );
         File targetFile = TestFileUtils.createTempFile( "" );
 
-        process = ext.lockFile( targetFile.getAbsolutePath(), wait );
+        ExternalProcessFileLock ext = new ExternalProcessFileLock( targetFile );
+        process = ext.lockFile( wait );
 
-        long start = System.currentTimeMillis();
-
-        // give external lock time to initialize
-        Thread.sleep( 500 );
+        long start = ext.awaitLock();
 
         fileProcessor.copy( srcFile, targetFile, null );
 
         long end = System.currentTimeMillis();
 
+        assertEquals( 0, process.waitFor() );
+
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
-        assertTrue( message, end > start + ( wait - 100 ) );
+        assertTrue( message, end - start > wait );
     }
 
     @Test

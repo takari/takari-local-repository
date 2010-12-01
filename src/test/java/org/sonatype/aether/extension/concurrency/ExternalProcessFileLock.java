@@ -17,16 +17,17 @@ import java.nio.channels.FileLock;
  * @author Benjamin Hanzelmann
  */
 public class ExternalProcessFileLock
-    extends ForkJvm
 {
 
+    private final File file;
+
     public static void main( String[] args )
-        throws IOException, InterruptedException
+        throws Exception
     {
-        String path = args[0] + ".aetherlock";
+        String path = args[0];
         String time = args[1];
 
-        File file = new File( path );
+        File file = new File( path + ".aetherlock" );
 
         file.getParentFile().mkdirs();
 
@@ -35,20 +36,76 @@ public class ExternalProcessFileLock
         RandomAccessFile raf = new RandomAccessFile( file, "rw" );
         FileLock lock = raf.getChannel().lock();
 
-        Thread.sleep( millis );
+        File touchFile = getTouchFile( path );
+        touchFile.createNewFile();
+
+        for ( long start = System.currentTimeMillis(); System.currentTimeMillis() - start < 5 * 1000
+            && touchFile.exists(); )
+        {
+            try
+            {
+                Thread.sleep( 10 );
+            }
+            catch ( InterruptedException e )
+            {
+                // ignored
+            }
+        }
+
+        long start = System.currentTimeMillis();
+        while ( System.currentTimeMillis() - start < millis )
+        {
+            Thread.sleep( millis / 10 + 1 );
+        }
 
         lock.release();
         raf.close();
     }
 
-    public Process lockFile( String path, int wait )
+    public ExternalProcessFileLock( File file )
+    {
+        this.file = file;
+    }
+
+    private static File getTouchFile( String path )
+    {
+        return new File( path + ".touch" );
+    }
+
+    public Process lockFile( int wait )
         throws InterruptedException, IOException
     {
-        addClassPathEntry( this.getClass() );
-        setParameters( path, String.valueOf( wait ) );
-        Process p = run( this.getClass().getName() );
+        ForkJvm jvm = new ForkJvm();
+        jvm.addClassPathEntry( getClass() );
+        jvm.setParameters( file.getAbsolutePath(), String.valueOf( wait ) );
+        Process p = jvm.run( getClass().getName() );
         p.getOutputStream().close();
         return p;
+    }
+
+    public long awaitLock()
+    {
+        File touchFile = getTouchFile( file.getAbsolutePath() );
+
+        for ( long start = System.currentTimeMillis(); System.currentTimeMillis() - start < 10 * 1000; )
+        {
+            if ( touchFile.exists() )
+            {
+                long now = System.currentTimeMillis();
+                touchFile.delete();
+                return now;
+            }
+            try
+            {
+                Thread.sleep( 10 );
+            }
+            catch ( InterruptedException e )
+            {
+                // ignored
+            }
+        }
+
+        throw new IllegalStateException( "External lock on " + file + " wasn't aquired in time" );
     }
 
 }
