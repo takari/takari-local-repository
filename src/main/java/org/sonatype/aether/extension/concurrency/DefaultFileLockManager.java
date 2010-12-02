@@ -186,6 +186,36 @@ public class DefaultFileLockManager
         }
     }
 
+    RandomAccessFile open( File file, String mode )
+        throws IOException
+    {
+        try
+        {
+            return new RandomAccessFile( file, mode );
+        }
+        catch ( IOException e )
+        {
+            /*
+             * NOTE: I've seen failures (on Windows) when opening the file which I can't really explain
+             * ("access denied", "locked"). Assuming those are bad interactions with OS-level processes (e.g. indexing,
+             * anti-virus), let's just retry before giving up due to a potentially spurious problem.
+             */
+            for ( int i = 3; i >= 0; i-- )
+            {
+                try
+                {
+                    return new RandomAccessFile( file, mode );
+                }
+                catch ( IOException ie )
+                {
+                    // ignored, we eventually rethrow the original error
+                }
+            }
+
+            throw e;
+        }
+    }
+
     class IndirectFileLock
         implements ExternalFileLock
     {
@@ -225,28 +255,7 @@ public class DefaultFileLockManager
         {
             lockFile = DefaultFileLockManager.this.lock( file, write );
 
-            try
-            {
-                raFile = new RandomAccessFile( file, write ? "rw" : "r" );
-            }
-            catch ( IOException e )
-            {
-                for ( int i = 3; i >= 0; i-- )
-                {
-                    try
-                    {
-                        raFile = new RandomAccessFile( file, write ? "rw" : "r" );
-                        break;
-                    }
-                    catch ( IOException ie )
-                    {
-                        if ( i <= 0 )
-                        {
-                            throw e;
-                        }
-                    }
-                }
-            }
+            raFile = DefaultFileLockManager.this.open( file, write ? "rw" : "r" );
         }
 
         public synchronized void unlock()
@@ -367,7 +376,7 @@ public class DefaultFileLockManager
             {
                 while ( true )
                 {
-                    raf = new RandomAccessFile( lockFile, "rw" );
+                    raf = DefaultFileLockManager.this.open( lockFile, "rw" );
 
                     try
                     {
