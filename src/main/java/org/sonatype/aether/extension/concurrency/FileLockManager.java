@@ -9,7 +9,7 @@ package org.sonatype.aether.extension.concurrency;
  *******************************************************************************/
 
 import java.io.File;
-import java.nio.channels.FileChannel;
+import java.io.RandomAccessFile;
 
 import org.sonatype.aether.extension.concurrency.LockManager.Lock;
 
@@ -22,19 +22,20 @@ public interface FileLockManager
 {
 
     /**
-     * This lock object adds the ability to directly access the {@link FileChannel} of the locked file.
+     * This lock object adds the ability to directly access the contents of the locked file.
      * 
      * @author Benjamin Hanzelmann
      */
     public interface ExternalFileLock
         extends Lock
     {
+
         /**
-         * Returns the channel for the locked file.
+         * Gets the random access file used to read/write the contents of the locked file.
          * 
-         * @return the channel for the locked file.
+         * @return The random access file used to read/write or {@code null} if the lock isn't acquired.
          */
-        FileChannel channel();
+        RandomAccessFile getRandomAccessFile();
 
         /**
          * Tells whether the lock is shared or exclusive.
@@ -42,6 +43,7 @@ public interface FileLockManager
          * @return {@code true} if the lock is shared, {@code false} if the lock is exclusive.
          */
         boolean isShared();
+
     }
 
     /**

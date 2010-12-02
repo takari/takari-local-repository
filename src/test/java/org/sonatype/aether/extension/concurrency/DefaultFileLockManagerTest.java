@@ -137,22 +137,22 @@ public class DefaultFileLockManagerTest
         lock1.lock();
         lock2.lock();
 
-        FileChannel channel1 = lock1.channel();
-        FileChannel channel2 = lock2.channel();
+        FileChannel channel1 = lock1.getRandomAccessFile().getChannel();
+        FileChannel channel2 = lock2.getRandomAccessFile().getChannel();
 
         assertNotSame( channel1, channel2 );
         assertSame( lock1.getLock(), lock2.getLock() );
 
         lock1.unlock();
-        assertNull( lock1.channel() );
+        assertNull( lock1.getRandomAccessFile() );
         assertFalse( channel1.isOpen() );
 
         assertTrue( lock2.getLock().isValid() );
-        assertNotNull( lock2.channel() );
+        assertNotNull( lock2.getRandomAccessFile() );
         assertTrue( channel2.isOpen() );
 
         lock2.unlock();
-        assertNull( lock2.channel() );
+        assertNull( lock2.getRandomAccessFile() );
         assertFalse( channel2.isOpen() );
     }
 

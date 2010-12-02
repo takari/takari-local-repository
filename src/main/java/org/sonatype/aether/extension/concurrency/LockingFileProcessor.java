@@ -8,13 +8,11 @@ package org.sonatype.aether.extension.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.channels.WritableByteChannel;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
@@ -54,11 +52,6 @@ public class LockingFileProcessor
     {
         setLockManager( lockManager );
         setFileLockManager( fileLockManager );
-    }
-
-    private void close( Closeable closeable )
-    {
-        FileUtils.close( closeable, logger );
     }
 
     private void unlock( LockManager.Lock lock )
@@ -116,22 +109,38 @@ public class LockingFileProcessor
             srcLock.lock();
             targetLock.lock();
 
-            FileChannel srcChannel = srcLock.channel();
+            ByteBuffer buffer = ByteBuffer.allocate( 1024 * 32 );
+            byte[] array = buffer.array();
 
-            FileChannel outChannel = targetLock.channel();
+            long total = 0;
 
-            WritableByteChannel realChannel = outChannel;
-            if ( listener != null )
+            for ( RandomAccessFile rafIn = srcLock.getRandomAccessFile(), rafOut = targetLock.getRandomAccessFile();; )
             {
-                realChannel = new ProgressingChannel( outChannel, listener );
+                int bytes = rafIn.read( array );
+                if ( bytes < 0 )
+                {
+                    rafOut.setLength( rafOut.getFilePointer() );
+                    break;
+                }
+
+                rafOut.write( array, 0, bytes );
+
+                total += bytes;
+
+                if ( listener != null && bytes > 0 )
+                {
+                    try
+                    {
+                        buffer.rewind();
+                        buffer.limit( bytes );
+                        listener.progressed( buffer );
+                    }
+                    catch ( Exception e )
+                    {
+                        logger.debug( "Failed to invoke copy progress listener", e );
+                    }
+                }
             }
-
-            long total = copy( srcChannel, realChannel );
-
-            /*
-             * NOTE: For graceful collaboration with concurrent readers, truncate file after write and not before.
-             */
-            outChannel.truncate( total );
 
             return total;
         }
@@ -140,42 +149,9 @@ public class LockingFileProcessor
             unlock( srcLock );
             unlock( targetLock );
 
-            close( srcLock.channel() );
-            close( targetLock.channel() );
-
             unlock( readLock );
             unlock( writeLock );
         }
-    }
-
-    /**
-     * Copy src to target channel. Its the responsibility of the caller to close the channels.
-     * 
-     * @param src the channel to copy from, must not be {@code null}.
-     * @param target the channel to copy to, must not be {@code null}.
-     * @return the number of copied bytes.
-     * @throws IOException if an I/O error occurs.
-     */
-    private long copy( FileChannel src, WritableByteChannel target )
-        throws IOException
-    {
-        long total = 0;
-
-        long size = src.size();
-
-        // copy large files in chunks to not run into Java Bug 4643189
-        // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4643189
-        // use even smaller chunks to work around bug with SMB shares
-        // http://forums.sun.com/thread.jspa?threadID=439695
-        long chunk = ( 64 * 1024 * 1024 ) - ( 32 * 1024 );
-
-        do
-        {
-            total += src.transferTo( total, chunk, target );
-        }
-        while ( total < size );
-
-        return total;
     }
 
     /**
@@ -191,29 +167,27 @@ public class LockingFileProcessor
         Lock writeLock = lockManager.writeLock( file );
         ExternalFileLock lock = fileLockManager.writeLock( file );
 
-        FileChannel channel = null;
         try
         {
             mkdirs( file.getParentFile() );
 
             lock.lock();
 
-            channel = lock.channel();
+            RandomAccessFile raf = lock.getRandomAccessFile();
 
             writeLock.lock();
 
+            raf.seek( 0 );
             if ( data != null )
             {
-                channel.write( ByteBuffer.wrap( data.getBytes( "UTF-8" ) ) );
+                raf.write( data.getBytes( "UTF-8" ) );
             }
 
-            channel.truncate( channel.position() );
+            raf.setLength( raf.getFilePointer() );
         }
         finally
         {
             unlock( lock );
-
-            close( channel );
 
             unlock( writeLock );
         }
@@ -224,7 +198,7 @@ public class LockingFileProcessor
     {
         /*
          * NOTE: For graceful collaboration with concurrent readers don't attempt to delete the target file, if it
-         * already exists, it's safer to just overwrite it.
+         * already exists, it's safer to just overwrite it, especially when the contents doesn't actually change.
          */
 
         if ( !source.renameTo( target ) )
@@ -234,42 +208,6 @@ public class LockingFileProcessor
             target.setLastModified( source.lastModified() );
 
             source.delete();
-        }
-    }
-
-    private static final class ProgressingChannel
-        implements WritableByteChannel
-    {
-        private final FileChannel delegate;
-
-        private final ProgressListener listener;
-
-        public ProgressingChannel( FileChannel delegate, ProgressListener listener )
-        {
-            this.delegate = delegate;
-            this.listener = listener;
-        }
-
-        public boolean isOpen()
-        {
-            return delegate.isOpen();
-        }
-
-        public void close()
-            throws IOException
-        {
-            delegate.close();
-        }
-
-        public int write( ByteBuffer src )
-            throws IOException
-        {
-            ByteBuffer eventBuffer = src.asReadOnlyBuffer();
-
-            int count = delegate.write( src );
-            listener.progressed( eventBuffer );
-
-            return count;
         }
     }
 

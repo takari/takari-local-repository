@@ -11,7 +11,6 @@ package org.sonatype.aether.extension.concurrency;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
 import java.util.HashMap;
@@ -93,43 +92,59 @@ public class DefaultFileLockManager
     LockFile lock( File file, boolean write )
         throws IOException
     {
-        while ( true )
+        boolean interrupted = false;
+
+        try
         {
-            LockFile lockFile;
-
-            synchronized ( lockFiles )
+            while ( true )
             {
-                lockFile = lockFiles.get( file );
+                LockFile lockFile;
 
-                if ( lockFile == null )
+                synchronized ( lockFiles )
                 {
-                    lockFile = new LockFile( file, write );
+                    lockFile = lockFiles.get( file );
 
-                    lockFiles.put( file, lockFile );
+                    if ( lockFile == null )
+                    {
+                        lockFile = new LockFile( file, write );
 
-                    return lockFile;
+                        lockFiles.put( file, lockFile );
+
+                        return lockFile;
+                    }
+                    else if ( lockFile.isReentrant( write ) )
+                    {
+                        lockFile.incRefCount();
+
+                        return lockFile;
+                    }
                 }
-                else if ( lockFile.isReentrant( write ) )
-                {
-                    lockFile.incRefCount();
 
-                    return lockFile;
-                }
-            }
-
-            synchronized ( lockFile )
-            {
-                try
+                synchronized ( lockFile )
                 {
-                    lockFile.wait();
-                }
-                catch ( InterruptedException e )
-                {
-                    Thread.currentThread().interrupt();
-                    throw new FileLockInterruptionException();
+                    try
+                    {
+                        lockFile.wait();
+                    }
+                    catch ( InterruptedException e )
+                    {
+                        interrupted = true;
+                    }
                 }
             }
         }
+        finally
+        {
+            /*
+             * NOTE: We want to ignore the interrupt but other code might want/need to react to it, so restore the
+             * interrupt flag.
+             */
+            if ( interrupted )
+            {
+                Thread.currentThread().interrupt();
+            }
+        }
+
     }
 
     void unlock( File file )
@@ -179,7 +194,7 @@ public class DefaultFileLockManager
 
         private final boolean write;
 
-        private FileChannel channel;
+        private RandomAccessFile raFile;
 
         private LockFile lockFile;
 
@@ -194,7 +209,7 @@ public class DefaultFileLockManager
         public synchronized void lock()
             throws IOException
         {
-            if ( channel == null )
+            if ( raFile == null )
             {
                 open();
                 nesting = 1;
@@ -210,7 +225,7 @@ public class DefaultFileLockManager
         {
             lockFile = DefaultFileLockManager.this.lock( file, write );
 
-            channel = new RandomAccessFile( file, write ? "rw" : "r" ).getChannel();
+            raFile = new RandomAccessFile( file, write ? "rw" : "r" );
         }
 
         public synchronized void unlock()
@@ -228,10 +243,10 @@ public class DefaultFileLockManager
         {
             try
             {
-                if ( channel != null )
+                if ( raFile != null )
                 {
-                    FileChannel tmp = channel;
-                    channel = null;
+                    RandomAccessFile tmp = raFile;
+                    raFile = null;
                     tmp.close();
                 }
             }
@@ -253,9 +268,9 @@ public class DefaultFileLockManager
             }
         }
 
-        public FileChannel channel()
+        public RandomAccessFile getRandomAccessFile()
         {
-            return channel;
+            return raFile;
         }
 
         public boolean isShared()
@@ -299,6 +314,8 @@ public class DefaultFileLockManager
 
         final FileLock fileLock;
 
+        final RandomAccessFile raFile;
+
         private final Thread owner;
 
         private int refCount;
@@ -321,18 +338,65 @@ public class DefaultFileLockManager
 
             FileUtils.mkdirs( lockFile.getParentFile() );
 
-            RandomAccessFile raf = new RandomAccessFile( lockFile, "rw" );
+            RandomAccessFile raf = null;
+            FileLock lock = null;
+            boolean interrupted = false;
 
             try
             {
-                fileLock = raf.getChannel().lock( 0, 1, !write );
+                while ( true )
+                {
+                    raf = new RandomAccessFile( lockFile, "rw" );
+
+                    try
+                    {
+                        lock = raf.getChannel().lock( 0, 1, !write );
+
+                        if ( lock == null )
+                        {
+                            /*
+                             * Probably related to http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6979009, lock()
+                             * erroneously returns null when the thread got interrupted and the channel silently closed.
+                             */
+                            throw new FileLockInterruptionException();
+                        }
+
+                        break;
+                    }
+                    catch ( FileLockInterruptionException e )
+                    {
+                        /*
+                         * NOTE: We want to lock that file and this isn't negotiable, so whatever felt like interrupting
+                         * our thread, try again later, we have work to get done. And since the interrupt closed the
+                         * channel, we need to start with a fresh file handle.
+                         */
+
+                        interrupted |= Thread.interrupted();
+
+                        FileUtils.close( raf, null );
+                    }
+                    catch ( IOException e )
+                    {
+                        FileUtils.close( raf, null );
+                        delete();
+                        throw e;
+                    }
+                }
             }
-            catch ( IOException e )
+            finally
             {
-                FileUtils.close( raf, null );
-                delete();
-                throw e;
+                /*
+                 * NOTE: We want to ignore the interrupt but other code might want/need to react to it, so restore the
+                 * interrupt flag.
+                 */
+                if ( interrupted )
+                {
+                    Thread.currentThread().interrupt();
+                }
             }
+
+            fileLock = lock;
+            raFile = raf;
         }
 
         void close()
@@ -351,10 +415,13 @@ public class DefaultFileLockManager
                 {
                     logger.warn( "Failed to release lock on " + lockFile + ": " + e );
                 }
+            }
 
+            if ( raFile != null )
+            {
                 try
                 {
-                    fileLock.channel().close();
+                    raFile.close();
                 }
                 finally
                 {
