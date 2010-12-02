@@ -225,7 +225,28 @@ public class DefaultFileLockManager
         {
             lockFile = DefaultFileLockManager.this.lock( file, write );
 
-            raFile = new RandomAccessFile( file, write ? "rw" : "r" );
+            try
+            {
+                raFile = new RandomAccessFile( file, write ? "rw" : "r" );
+            }
+            catch ( IOException e )
+            {
+                for ( int i = 3; i >= 0; i-- )
+                {
+                    try
+                    {
+                        raFile = new RandomAccessFile( file, write ? "rw" : "r" );
+                        break;
+                    }
+                    catch ( IOException ie )
+                    {
+                        if ( i <= 0 )
+                        {
+                            throw e;
+                        }
+                    }
+                }
+            }
         }
 
         public synchronized void unlock()
