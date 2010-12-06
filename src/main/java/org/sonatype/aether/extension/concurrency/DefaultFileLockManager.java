@@ -144,7 +144,6 @@ public class DefaultFileLockManager
                 Thread.currentThread().interrupt();
             }
         }
-
     }
 
     void unlock( File file )
@@ -189,6 +188,8 @@ public class DefaultFileLockManager
     RandomAccessFile open( File file, String mode )
         throws IOException
     {
+        boolean interrupted = false;
+
         try
         {
             return new RandomAccessFile( file, mode );
@@ -204,6 +205,14 @@ public class DefaultFileLockManager
             {
                 try
                 {
+                    Thread.sleep( 10 );
+                }
+                catch ( InterruptedException e1 )
+                {
+                    interrupted = true;
+                }
+                try
+                {
                     return new RandomAccessFile( file, mode );
                 }
                 catch ( IOException ie )
@@ -213,6 +222,13 @@ public class DefaultFileLockManager
             }
 
             throw e;
+        }
+        finally
+        {
+            if ( interrupted )
+            {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
