@@ -21,6 +21,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
@@ -63,6 +64,8 @@ public class LockingInstaller
     implements Installer, Service
 {
 
+    static final String GIDFILE_PREFIX = "LockingInstaller_FileLock_";
+
     @Requirement
     private Logger logger = NullLogger.INSTANCE;
 
@@ -81,6 +84,8 @@ public class LockingInstaller
     @Requirement
     private FileLockManager fileLockManager;
 
+    private Set<File> gidFiles = Collections.synchronizedSet( new HashSet<File>() );
+
     private static final Comparator<MetadataGeneratorFactory> COMPARATOR = new Comparator<MetadataGeneratorFactory>()
     {
 
@@ -93,7 +98,17 @@ public class LockingInstaller
 
     public LockingInstaller()
     {
-        // enables default constructor
+        Runtime.getRuntime().addShutdownHook( new Thread( new Runnable()
+        {
+            public void run()
+            {
+                for ( File f : gidFiles )
+                {
+                    f.delete();
+                }
+            }
+        } ) );
+
     }
 
     public LockingInstaller( Logger logger, FileProcessor fileProcessor,
@@ -101,6 +116,7 @@ public class LockingInstaller
                              List<LocalRepositoryMaintainer> localRepositoryMaintainers, LockManager lockManager,
                              FileLockManager fileLockManager )
     {
+        this();
         setLogger( logger );
         setFileProcessor( fileProcessor );
         setLockManager( lockManager );
@@ -673,7 +689,8 @@ public class LockingInstaller
 
         try
         {
-            Collection<File> gidFiles = new HashSet<File>();
+            Collection<File> gidFiles = ctx.getFiles();
+
             for ( Artifact a : artifacts )
             {
                 gidFiles.add( gidFile( session, a.getGroupId() ) );
@@ -763,11 +780,23 @@ public class LockingInstaller
         throws IOException
     {
         unlock( ctx.getLocks() );
+        remove( ctx.getFiles() );
+    }
+
+    private void remove( Set<File> files )
+    {
+        for ( File file : files )
+        {
+            file.delete();
+            gidFiles.remove( file );
+        }
     }
 
     private File gidFile( RepositorySystemSession session, String gid )
     {
-        return new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_" + gid );
+        File gidFile = new File( session.getLocalRepository().getBasedir(), GIDFILE_PREFIX + gid );
+        gidFiles.add( gidFile );
+        return gidFile;
     }
 
     private class InstallerContext
@@ -776,12 +805,19 @@ public class LockingInstaller
     
         private Map<Artifact, LocalArtifactRegistration> registrations =
             new HashMap<Artifact, LocalArtifactRegistration>();
+
+        private Set<File> files = new HashSet<File>();
     
         public List<Lock> getLocks()
         {
             return locks;
         }
     
+        public Set<File> getFiles()
+        {
+            return files;
+        }
+
         public Map<Artifact, LocalArtifactRegistration> getRegistrations()
         {
             return registrations;

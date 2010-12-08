@@ -558,4 +558,17 @@ public class LockingInstallerTest
         assertTrue( message, end - start > wait );
     }
 
+    @Test
+    public void cleanupGidLockFiles()
+        throws InstallationException
+    {
+        request.addArtifact( artifact );
+
+        installer.install( session, request );
+
+        File basedir = session.getLocalRepository().getBasedir();
+        File lockfile = new File( basedir, LockingInstaller.GIDFILE_PREFIX + artifact.getGroupId() );
+        assertFalse( "gid lock file still exists", lockfile.exists() );
+    }
+
 }
