@@ -79,6 +79,11 @@ http://www.eclipse.org/legal/epl-v10.html
       <artifactId>aether-impl</artifactId>
       <version>${aether.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.sonatype.aether</groupId>
+      <artifactId>aether-locking</artifactId>
+      <version>1.9-SNAPSHOT</version>
+    </dependency>
   </dependencies>
 
   <build>

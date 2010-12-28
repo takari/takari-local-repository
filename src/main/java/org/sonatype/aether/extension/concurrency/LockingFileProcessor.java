@@ -16,8 +16,10 @@ import java.nio.channels.FileLock;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.sonatype.aether.extension.concurrency.FileLockManager.ExternalFileLock;
-import org.sonatype.aether.extension.concurrency.LockManager.Lock;
+import org.sonatype.aether.locking.FileLockManager;
+import org.sonatype.aether.locking.FileLockManager.ExternalFileLock;
+import org.sonatype.aether.locking.LockManager;
+import org.sonatype.aether.locking.LockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor;
 import org.sonatype.aether.spi.locator.Service;
 import org.sonatype.aether.spi.locator.ServiceLocator;
