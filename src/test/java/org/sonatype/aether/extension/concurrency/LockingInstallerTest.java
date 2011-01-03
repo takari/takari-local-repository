@@ -523,7 +523,10 @@ public class LockingInstallerTest
         int wait = 1500;
         request.addArtifact( artifact );
 
-        File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
+        File lockfile =
+            new File( session.getLocalRepository().getBasedir(),
+                      session.getLocalRepositoryManager().getPathForLocalArtifact( artifact ) );
+        System.out.println( lockfile );
         ExternalProcessFileLock ext = new ExternalProcessFileLock( lockfile );
         process = ext.lockFile( wait );
 
@@ -543,7 +546,9 @@ public class LockingInstallerTest
         int wait = 1500;
         request.addMetadata( metadata );
 
-        File lockfile = new File( session.getLocalRepository().getBasedir(), "LockingInstaller_FileLock_gid" );
+        File lockfile =
+            new File( session.getLocalRepository().getBasedir(),
+                      session.getLocalRepositoryManager().getPathForLocalMetadata( metadata ) );
         ExternalProcessFileLock ext = new ExternalProcessFileLock( lockfile );
         process = ext.lockFile( wait );
 
@@ -555,19 +560,6 @@ public class LockingInstallerTest
 
         String message = "expected " + wait + "ms wait, real delta: " + ( end - start );
         assertTrue( message, end - start > wait );
-    }
-
-    @Test
-    public void cleanupGidLockFiles()
-        throws InstallationException
-    {
-        request.addArtifact( artifact );
-
-        installer.install( session, request );
-
-        File basedir = session.getLocalRepository().getBasedir();
-        File lockfile = new File( basedir, LockingInstaller.GIDFILE_PREFIX + artifact.getGroupId() );
-        assertFalse( "gid lock file still exists", lockfile.exists() );
     }
 
 }

@@ -16,13 +16,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.RepositoryEvent.EventType;
@@ -65,8 +62,6 @@ public class LockingInstaller
     implements Installer, Service
 {
 
-    static final String GIDFILE_PREFIX = "LockingInstaller_FileLock_";
-
     @Requirement
     private Logger logger = NullLogger.INSTANCE;
 
@@ -82,8 +77,6 @@ public class LockingInstaller
     @Requirement
     private FileLockManager fileLockManager;
 
-    private Set<File> gidFiles = Collections.synchronizedSet( new HashSet<File>() );
-
     private static final Comparator<MetadataGeneratorFactory> COMPARATOR = new Comparator<MetadataGeneratorFactory>()
     {
 
@@ -96,17 +89,7 @@ public class LockingInstaller
 
     public LockingInstaller()
     {
-        Runtime.getRuntime().addShutdownHook( new Thread( new Runnable()
-        {
-            public void run()
-            {
-                for ( File f : gidFiles )
-                {
-                    f.delete();
-                }
-            }
-        } ) );
-
+        // enable default constructor
     }
 
     public LockingInstaller( Logger logger, FileProcessor fileProcessor,
@@ -114,7 +97,6 @@ public class LockingInstaller
                              List<LocalRepositoryMaintainer> localRepositoryMaintainers,
                              FileLockManager fileLockManager )
     {
-        this();
         setLogger( logger );
         setFileProcessor( fileProcessor );
         setFileLockManager( fileLockManager );
@@ -679,22 +661,6 @@ public class LockingInstaller
 
         try
         {
-            Collection<File> gidFiles = ctx.getFiles();
-
-            for ( Artifact a : artifacts )
-            {
-                gidFiles.add( gidFile( session, a.getGroupId() ) );
-            }
-            for ( Metadata m : metadata )
-            {
-                gidFiles.add( gidFile( session, m.getGroupId() ) );
-            }
-
-            for ( File gidFile : gidFiles )
-            {
-                filelock( locks, gidFile );
-            }
-
             for ( Artifact a : artifacts )
             {
                 lock( session, locks, a );
@@ -720,15 +686,6 @@ public class LockingInstaller
         throws IOException
     {
         lock( session, ctx.getLocks(), m );
-        filelock( ctx.getLocks(), gidFile( session, m.getGroupId() ) );
-    }
-
-    private void filelock( List<Lock> locks, File gidFile )
-        throws IOException
-    {
-        Lock lock = fileLockManager.writeLock( gidFile );
-        lock.lock();
-        locks.add( lock );
     }
 
     private void lock( RepositorySystemSession session, List<Lock> locks, Metadata m )
@@ -770,23 +727,6 @@ public class LockingInstaller
         throws IOException
     {
         unlock( ctx.getLocks() );
-        remove( ctx.getFiles() );
-    }
-
-    private void remove( Set<File> files )
-    {
-        for ( File file : files )
-        {
-            file.delete();
-            gidFiles.remove( file );
-        }
-    }
-
-    private File gidFile( RepositorySystemSession session, String gid )
-    {
-        File gidFile = new File( session.getLocalRepository().getBasedir(), GIDFILE_PREFIX + gid );
-        gidFiles.add( gidFile );
-        return gidFile;
     }
 
     private class InstallerContext
@@ -796,16 +736,9 @@ public class LockingInstaller
         private Map<Artifact, LocalArtifactRegistration> registrations =
             new HashMap<Artifact, LocalArtifactRegistration>();
 
-        private Set<File> files = new HashSet<File>();
-    
         public List<Lock> getLocks()
         {
             return locks;
-        }
-    
-        public Set<File> getFiles()
-        {
-            return files;
         }
 
         public Map<Artifact, LocalArtifactRegistration> getRegistrations()
