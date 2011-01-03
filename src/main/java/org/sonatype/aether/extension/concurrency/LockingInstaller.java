@@ -39,8 +39,7 @@ import org.sonatype.aether.installation.InstallRequest;
 import org.sonatype.aether.installation.InstallResult;
 import org.sonatype.aether.installation.InstallationException;
 import org.sonatype.aether.locking.FileLockManager;
-import org.sonatype.aether.locking.LockManager;
-import org.sonatype.aether.locking.LockManager.Lock;
+import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.metadata.MergeableMetadata;
 import org.sonatype.aether.metadata.Metadata;
 import org.sonatype.aether.repository.LocalArtifactRegistration;
@@ -81,9 +80,6 @@ public class LockingInstaller
     private List<MetadataGeneratorFactory> metadataFactories = new ArrayList<MetadataGeneratorFactory>();
 
     @Requirement
-    private LockManager lockManager;
-
-    @Requirement
     private FileLockManager fileLockManager;
 
     private Set<File> gidFiles = Collections.synchronizedSet( new HashSet<File>() );
@@ -115,13 +111,12 @@ public class LockingInstaller
 
     public LockingInstaller( Logger logger, FileProcessor fileProcessor,
                              List<MetadataGeneratorFactory> metadataFactories,
-                             List<LocalRepositoryMaintainer> localRepositoryMaintainers, LockManager lockManager,
+                             List<LocalRepositoryMaintainer> localRepositoryMaintainers,
                              FileLockManager fileLockManager )
     {
         this();
         setLogger( logger );
         setFileProcessor( fileProcessor );
-        setLockManager( lockManager );
         setFileLockManager( fileLockManager );
         setMetadataFactories( metadataFactories );
         setLocalRepositoryMaintainers( localRepositoryMaintainers );
@@ -131,7 +126,6 @@ public class LockingInstaller
     {
         setLogger( locator.getService( Logger.class ) );
         setFileProcessor( locator.getService( FileProcessor.class ) );
-        setLockManager( locator.getService( LockManager.class ) );
         setFileLockManager( locator.getService( FileLockManager.class ) );
         setLocalRepositoryMaintainers( locator.getServices( LocalRepositoryMaintainer.class ) );
         setMetadataFactories( locator.getServices( MetadataGeneratorFactory.class ) );
@@ -179,12 +173,6 @@ public class LockingInstaller
         {
             this.localRepositoryMaintainers = maintainers;
         }
-        return this;
-    }
-
-    public LockingInstaller setLockManager( LockManager lockManager )
-    {
-        this.lockManager = lockManager;
         return this;
     }
 
@@ -764,7 +752,7 @@ public class LockingInstaller
     private void lock( List<Lock> locks, File file )
         throws IOException
     {
-        Lock l = lockManager.writeLock( file );
+        Lock l = fileLockManager.writeLock( file );
         l.lock();
         locks.add( l );
     }

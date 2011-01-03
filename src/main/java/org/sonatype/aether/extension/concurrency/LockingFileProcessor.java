@@ -17,9 +17,7 @@ import java.nio.channels.FileLock;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.locking.FileLockManager;
-import org.sonatype.aether.locking.FileLockManager.ExternalFileLock;
-import org.sonatype.aether.locking.LockManager;
-import org.sonatype.aether.locking.LockManager.Lock;
+import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor;
 import org.sonatype.aether.spi.locator.Service;
 import org.sonatype.aether.spi.locator.ServiceLocator;
@@ -40,9 +38,6 @@ public class LockingFileProcessor
     private Logger logger = NullLogger.INSTANCE;
 
     @Requirement
-    private LockManager lockManager;
-
-    @Requirement
     private FileLockManager fileLockManager;
 
     public LockingFileProcessor()
@@ -50,13 +45,12 @@ public class LockingFileProcessor
         // enable default constructor
     }
 
-    public LockingFileProcessor( LockManager lockManager, FileLockManager fileLockManager )
+    public LockingFileProcessor( FileLockManager fileLockManager )
     {
-        setLockManager( lockManager );
         setFileLockManager( fileLockManager );
     }
 
-    private void unlock( LockManager.Lock lock )
+    private void unlock( Lock lock )
     {
         if ( lock != null )
         {
@@ -95,17 +89,11 @@ public class LockingFileProcessor
     public long copy( File src, File target, ProgressListener listener )
         throws IOException
     {
-        Lock readLock = lockManager.readLock( src );
-        Lock writeLock = lockManager.writeLock( target );
-
-        ExternalFileLock srcLock = fileLockManager.readLock( src );
-        ExternalFileLock targetLock = fileLockManager.writeLock( target );
+        Lock srcLock = fileLockManager.readLock( src );
+        Lock targetLock = fileLockManager.writeLock( target );
 
         try
         {
-            readLock.lock();
-            writeLock.lock();
-
             mkdirs( target.getParentFile() );
 
             srcLock.lock();
@@ -150,9 +138,6 @@ public class LockingFileProcessor
         {
             unlock( srcLock );
             unlock( targetLock );
-
-            unlock( readLock );
-            unlock( writeLock );
         }
     }
 
@@ -166,8 +151,7 @@ public class LockingFileProcessor
     public void write( File file, String data )
         throws IOException
     {
-        Lock writeLock = lockManager.writeLock( file );
-        ExternalFileLock lock = fileLockManager.writeLock( file );
+        Lock lock = fileLockManager.writeLock( file );
 
         try
         {
@@ -176,8 +160,6 @@ public class LockingFileProcessor
             lock.lock();
 
             RandomAccessFile raf = lock.getRandomAccessFile();
-
-            writeLock.lock();
 
             raf.seek( 0 );
             if ( data != null )
@@ -190,8 +172,6 @@ public class LockingFileProcessor
         finally
         {
             unlock( lock );
-
-            unlock( writeLock );
         }
     }
 
@@ -230,21 +210,6 @@ public class LockingFileProcessor
      * 
      * @param lockManager The LockManager to use, may not be {@code null}.
      */
-    public LockingFileProcessor setLockManager( LockManager lockManager )
-    {
-        if ( lockManager == null )
-        {
-            throw new IllegalArgumentException( "LockManager may not be null." );
-        }
-        this.lockManager = lockManager;
-        return this;
-    }
-
-    /**
-     * Sets the LockManager to use.
-     * 
-     * @param lockManager The LockManager to use, may not be {@code null}.
-     */
     public void setFileLockManager( FileLockManager lockManager )
     {
         if ( lockManager == null )
@@ -256,7 +221,6 @@ public class LockingFileProcessor
 
     public void initService( ServiceLocator locator )
     {
-        setLockManager( locator.getService( LockManager.class ) );
         setFileLockManager( locator.getService( FileLockManager.class ) );
         setLogger( locator.getService( Logger.class ) );
     }

@@ -22,7 +22,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonatype.aether.locking.DefaultFileLockManager;
-import org.sonatype.aether.locking.DefaultLockManager;
 import org.sonatype.aether.spi.io.FileProcessor.ProgressListener;
 import org.sonatype.aether.test.util.TestFileUtils;
 
@@ -75,7 +74,7 @@ public class LockingFileProcessorTest
     {
         targetDir = TestFileUtils.createTempDir( getClass().getSimpleName() );
         fileProcessor = new LockingFileProcessor();
-        fileProcessor.setLockManager( new DefaultLockManager() ).setFileLockManager( new DefaultFileLockManager() );
+        fileProcessor.setFileLockManager( new DefaultFileLockManager() );
     }
 
     @After

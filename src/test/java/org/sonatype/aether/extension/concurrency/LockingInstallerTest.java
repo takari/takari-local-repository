@@ -26,10 +26,8 @@ import org.sonatype.aether.installation.InstallRequest;
 import org.sonatype.aether.installation.InstallResult;
 import org.sonatype.aether.installation.InstallationException;
 import org.sonatype.aether.locking.DefaultFileLockManager;
-import org.sonatype.aether.locking.DefaultLockManager;
 import org.sonatype.aether.locking.FileLockManager;
-import org.sonatype.aether.locking.LockManager;
-import org.sonatype.aether.locking.LockManager.Lock;
+import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.metadata.Metadata;
 import org.sonatype.aether.metadata.Metadata.Nature;
 import org.sonatype.aether.repository.LocalRepositoryManager;
@@ -67,8 +65,6 @@ public class LockingInstallerTest
 
     private Logger logger;
 
-    private LockManager lockManager;
-
     private FileLockManager fileLockManager;
 
     private File localArtifactFile;
@@ -92,10 +88,9 @@ public class LockingInstallerTest
         localMetadataPath = session.getLocalRepositoryManager().getPathForLocalMetadata( metadata );
         localArtifactFile = new File( session.getLocalRepository().getBasedir(), localArtifactPath );
         localMetadataFile = new File( session.getLocalRepository().getBasedir(), localMetadataPath );
-        lockManager = new DefaultLockManager();
         fileLockManager = new DefaultFileLockManager();
         installer =
-            new LockingInstaller().setFileProcessor( TestFileProcessor.INSTANCE ).setLockManager( lockManager ).setFileLockManager( fileLockManager );
+            new LockingInstaller().setFileProcessor( TestFileProcessor.INSTANCE ).setFileLockManager( fileLockManager );
         // logger = new SyserrLogger();
         // installer.setLogger( logger );
         request = new InstallRequest();
@@ -416,7 +411,7 @@ public class LockingInstallerTest
                 throws IOException
             {
                 File f = new File( session.getLocalRepository().getBasedir(), localArtifactPath );
-                Lock lock = lockManager.writeLock( f );
+                Lock lock = fileLockManager.writeLock( f );
                 lock.lock();
                 waitForTick( 3 );
                 lock.unlock();
