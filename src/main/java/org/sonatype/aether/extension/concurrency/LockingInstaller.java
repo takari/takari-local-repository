@@ -20,6 +20,9 @@ import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.RepositoryEvent.EventType;
@@ -659,21 +662,40 @@ public class LockingInstaller
 
         List<Lock> locks = ctx.getLocks();
 
+        SortedSet<File> files = new TreeSet<File>();
+        LocalRepositoryManager lrm = session.getLocalRepositoryManager();
+
         try
         {
             for ( Artifact a : artifacts )
             {
-                lock( session, locks, a );
+                File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
+                files.add( file );
+                // lock( session, locks, a );
             }
             for ( Metadata m : metadata )
             {
-                lock( session, locks, m );
+                File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
+                files.add( file );
+                // lock( session, locks, m );
             }
+            lockAll( locks, files );
         }
         catch ( IOException t )
         {
             unlock( locks );
             throw t;
+        }
+    }
+
+    private void lockAll( List<Lock> locks, SortedSet<File> files )
+        throws IOException
+    {
+        for ( File file : files )
+        {
+            Lock l = fileLockManager.writeLock( file );
+            l.lock();
+            locks.add( l );
         }
     }
 
@@ -693,15 +715,6 @@ public class LockingInstaller
     {
         LocalRepositoryManager lrm = session.getLocalRepositoryManager();
         File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
-
-        lock( locks, file );
-    }
-
-    private void lock( RepositorySystemSession session, List<Lock> locks, Artifact a )
-        throws IOException
-    {
-        LocalRepositoryManager lrm = session.getLocalRepositoryManager();
-        File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalArtifact( a ) );
 
         lock( locks, file );
     }
