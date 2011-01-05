@@ -189,14 +189,6 @@ public class LockingInstaller
     {
         InstallerContext ctx = new InstallerContext();
 
-        try
-        {
-            lockAll( session, request, ctx );
-        }
-        catch ( IOException e )
-        {
-            throw new InstallationException( "Could not safely lock files", e );
-        }
 
         InstallResult result = new InstallResult( request );
 
@@ -212,64 +204,61 @@ public class LockingInstaller
         {
             try
             {
+                // generate
                 for ( MetadataGenerator generator : generators )
                 {
                     for ( Metadata metadata : generator.prepare( artifacts ) )
                     {
-                        try
-                        {
-                            lock( session, metadata, ctx );
-                        }
-                        catch ( IOException e )
-                        {
-                            throw new InstallationException( "Could not install " + metadata, e );
-                        }
-                        install( session, metadata );
                         processedMetadata.put( metadata, null );
                         result.addMetadata( metadata );
                     }
-                }
-
-                for ( int i = 0; i < artifacts.size(); i++ )
-                {
-                    Artifact artifact = artifacts.get( i );
-
-                    for ( MetadataGenerator generator : generators )
+                    LinkedList<Artifact> transformedArtifacts = new LinkedList<Artifact>();
+                    for ( int i = 0; i < artifacts.size(); i++ )
                     {
+                        Artifact artifact = artifacts.get( i );
+
                         artifact = generator.transformArtifact( artifact );
+
+                        artifacts.set( i, artifact );
                     }
 
-                    artifacts.set( i, artifact );
-
-                    install( session, artifact, ctx );
-                    result.addArtifact( artifact );
-                }
-
-                for ( MetadataGenerator generator : generators )
-                {
                     for ( Metadata metadata : generator.finish( artifacts ) )
                     {
-                        try
-                        {
-                            lock( session, metadata, ctx );
-                        }
-                        catch ( IOException e )
-                        {
-                            throw new InstallationException( "Could not install " + metadata.toString(), e );
-                        }
-                        install( session, metadata );
                         processedMetadata.put( metadata, null );
                         result.addMetadata( metadata );
                     }
+
                 }
 
+                result.setArtifacts( artifacts );
+                
                 for ( Metadata metadata : request.getMetadata() )
                 {
                     if ( !processedMetadata.containsKey( metadata ) )
                     {
-                        install( session, metadata );
                         result.addMetadata( metadata );
                     }
+                }
+
+                // lock
+                try
+                {
+                    lockAll( session, result, ctx );
+                }
+                catch ( IOException e )
+                {
+                    throw new InstallationException( "Could not safely lock files", e );
+                }
+
+                // install
+                for ( Artifact artifact : result.getArtifacts() )
+                {
+                    install( session, artifact, ctx );
+                }
+                
+                for ( Metadata metadata : result.getMetadata() )
+                {
+                    install( session, metadata );
                 }
 
             }
@@ -654,11 +643,11 @@ public class LockingInstaller
         }
     }
 
-    private synchronized void lockAll( RepositorySystemSession session, InstallRequest request, InstallerContext ctx )
+    private synchronized void lockAll( RepositorySystemSession session, InstallResult result, InstallerContext ctx )
         throws IOException
     {
-        Collection<Artifact> artifacts = request.getArtifacts();
-        Collection<Metadata> metadata = request.getMetadata();
+        Collection<Artifact> artifacts = result.getArtifacts();
+        Collection<Metadata> metadata = result.getMetadata();
 
         List<Lock> locks = ctx.getLocks();
 
