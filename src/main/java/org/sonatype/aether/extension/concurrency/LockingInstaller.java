@@ -10,7 +10,6 @@ package org.sonatype.aether.extension.concurrency;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -212,7 +211,7 @@ public class LockingInstaller
                         processedMetadata.put( metadata, null );
                         result.addMetadata( metadata );
                     }
-                    LinkedList<Artifact> transformedArtifacts = new LinkedList<Artifact>();
+
                     for ( int i = 0; i < artifacts.size(); i++ )
                     {
                         Artifact artifact = artifacts.get( i );
@@ -686,34 +685,6 @@ public class LockingInstaller
             l.lock();
             locks.add( l );
         }
-    }
-
-    /**
-     * Lock file for given metadata, internally and via {@link FileLock}.
-     * 
-     * @throws LockingException
-     */
-    private void lock( RepositorySystemSession session, Metadata m, InstallerContext ctx )
-        throws IOException
-    {
-        lock( session, ctx.getLocks(), m );
-    }
-
-    private void lock( RepositorySystemSession session, List<Lock> locks, Metadata m )
-        throws IOException
-    {
-        LocalRepositoryManager lrm = session.getLocalRepositoryManager();
-        File file = new File( lrm.getRepository().getBasedir(), lrm.getPathForLocalMetadata( m ) );
-
-        lock( locks, file );
-    }
-
-    private void lock( List<Lock> locks, File file )
-        throws IOException
-    {
-        Lock l = fileLockManager.writeLock( file );
-        l.lock();
-        locks.add( l );
     }
 
     private void unlock( List<Lock> locks )
