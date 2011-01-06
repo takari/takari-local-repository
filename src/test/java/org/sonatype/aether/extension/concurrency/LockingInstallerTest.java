@@ -13,6 +13,7 @@ import static org.sonatype.aether.test.impl.RecordingRepositoryListener.Type.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
@@ -115,7 +116,6 @@ public class LockingInstallerTest
         TestFileUtils.delete( session.getLocalRepository().getBasedir() );
     }
 
-
     @Test
     public void testSuccessfulInstall()
         throws InstallationException, UnsupportedEncodingException, IOException
@@ -138,6 +138,52 @@ public class LockingInstallerTest
 
         assertTrue( metadataFile.exists() );
         TestFileUtils.assertContent( "metadata".getBytes( "UTF-8" ), metadataFile );
+
+        assertEquals( result.getRequest(), request );
+
+        assertEquals( result.getArtifacts().size(), 1 );
+        assertTrue( result.getArtifacts().contains( artifact ) );
+
+        assertEquals( result.getMetadata().size(), 1 );
+        assertTrue( result.getMetadata().contains( metadata ) );
+    }
+
+    @Test
+    public void testRepeatedInstallOfArtifactWhichGotOpenedForReadingInTheMeantime()
+        throws InstallationException, UnsupportedEncodingException, IOException
+    {
+        File artifactFile =
+            new File( session.getLocalRepositoryManager().getRepository().getBasedir(), localArtifactPath );
+        File metadataFile =
+            new File( session.getLocalRepositoryManager().getRepository().getBasedir(), localMetadataPath );
+
+        artifactFile.delete();
+        metadataFile.delete();
+
+        request.addArtifact( artifact );
+        request.addMetadata( metadata );
+
+        InstallResult result = installer.install( session, request );
+
+        TestFileUtils.write( "updated", artifact.getFile() );
+        TestFileUtils.write( "updated", metadata.getFile() );
+
+        // emulate other process reading the file, e.g. a class loader reading a JAR
+        RandomAccessFile raf = new RandomAccessFile( artifactFile, "r" );
+        try
+        {
+            result = installer.install( session, request );
+        }
+        finally
+        {
+            raf.close();
+        }
+
+        assertTrue( artifactFile.exists() );
+        TestFileUtils.assertContent( "updated".getBytes( "UTF-8" ), artifactFile );
+
+        assertTrue( metadataFile.exists() );
+        TestFileUtils.assertContent( "updated".getBytes( "UTF-8" ), metadataFile );
 
         assertEquals( result.getRequest(), request );
 
