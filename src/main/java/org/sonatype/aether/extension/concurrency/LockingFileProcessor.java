@@ -80,65 +80,71 @@ public class LockingFileProcessor
      * This method performs R/W-locking on the given files to provide concurrent access to files without data
      * corruption, and will honor {@link FileLock}s from an external process.
      * 
-     * @param src the file to copy from, must not be {@code null}.
+     * @param source the file to copy from, must not be {@code null}.
      * @param target the file to copy to, must not be {@code null}.
      * @param listener the listener to notify about the copy progress, may be {@code null}.
      * @return the number of copied bytes.
      * @throws IOException if an I/O error occurs.
      */
-    public long copy( File src, File target, ProgressListener listener )
+    public long copy( File source, File target, ProgressListener listener )
         throws IOException
     {
-        Lock srcLock = fileLockManager.readLock( src );
+        Lock sourceLock = fileLockManager.readLock( source );
         Lock targetLock = fileLockManager.writeLock( target );
 
         try
         {
             mkdirs( target.getParentFile() );
 
-            srcLock.lock();
+            sourceLock.lock();
             targetLock.lock();
 
-            ByteBuffer buffer = ByteBuffer.allocate( 1024 * 32 );
-            byte[] array = buffer.array();
-
-            long total = 0;
-
-            for ( RandomAccessFile rafIn = srcLock.getRandomAccessFile(), rafOut = targetLock.getRandomAccessFile();; )
-            {
-                int bytes = rafIn.read( array );
-                if ( bytes < 0 )
-                {
-                    rafOut.setLength( rafOut.getFilePointer() );
-                    break;
-                }
-
-                rafOut.write( array, 0, bytes );
-
-                total += bytes;
-
-                if ( listener != null && bytes > 0 )
-                {
-                    try
-                    {
-                        buffer.rewind();
-                        buffer.limit( bytes );
-                        listener.progressed( buffer );
-                    }
-                    catch ( Exception e )
-                    {
-                        logger.debug( "Failed to invoke copy progress listener", e );
-                    }
-                }
-            }
-
-            return total;
+            return copy( sourceLock.getRandomAccessFile(), targetLock.getRandomAccessFile(), listener );
         }
         finally
         {
-            unlock( srcLock );
+            unlock( sourceLock );
             unlock( targetLock );
         }
+    }
+
+    private long copy( RandomAccessFile rafIn, RandomAccessFile rafOut, ProgressListener listener )
+        throws IOException
+    {
+        ByteBuffer buffer = ByteBuffer.allocate( 1024 * 32 );
+        byte[] array = buffer.array();
+
+        long total = 0;
+
+        for ( ;; )
+        {
+            int bytes = rafIn.read( array );
+            if ( bytes < 0 )
+            {
+                rafOut.setLength( rafOut.getFilePointer() );
+                break;
+            }
+
+            rafOut.write( array, 0, bytes );
+
+            total += bytes;
+
+            if ( listener != null && bytes > 0 )
+            {
+                try
+                {
+                    buffer.rewind();
+                    buffer.limit( bytes );
+                    listener.progressed( buffer );
+                }
+                catch ( Exception e )
+                {
+                    logger.debug( "Failed to invoke copy progress listener", e );
+                }
+            }
+        }
+
+        return total;
     }
 
     /**
@@ -183,13 +189,35 @@ public class LockingFileProcessor
          * already exists, it's safer to just overwrite it, especially when the contents doesn't actually change.
          */
 
-        if ( !source.renameTo( target ) )
+        /*
+         * NOTE: We're about to remove/delete the source file so be sure to acquire an exclusive lock for the source.
+         */
+
+        Lock sourceLock = fileLockManager.writeLock( source );
+        Lock targetLock = fileLockManager.writeLock( target );
+
+        try
         {
-            copy( source, target, null );
+            mkdirs( target.getParentFile() );
 
-            target.setLastModified( source.lastModified() );
+            sourceLock.lock();
+            targetLock.lock();
 
-            source.delete();
+            if ( !source.renameTo( target ) )
+            {
+                copy( sourceLock.getRandomAccessFile(), targetLock.getRandomAccessFile(), null );
+
+                unlock( targetLock );
+
+                target.setLastModified( source.lastModified() );
+
+                source.delete();
+            }
+        }
+        finally
+        {
+            unlock( sourceLock );
+            unlock( targetLock );
         }
     }
 
