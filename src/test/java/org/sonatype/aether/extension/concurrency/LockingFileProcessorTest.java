@@ -22,6 +22,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonatype.aether.locking.DefaultFileLockManager;
+import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor.ProgressListener;
 import org.sonatype.aether.test.util.TestFileUtils;
 
@@ -68,13 +69,16 @@ public class LockingFileProcessorTest
 
     private Process process;
 
+    private DefaultFileLockManager lockManager;
+
     @Before
     public void setup()
         throws IOException
     {
         targetDir = TestFileUtils.createTempDir( getClass().getSimpleName() );
         fileProcessor = new LockingFileProcessor();
-        fileProcessor.setFileLockManager( new DefaultFileLockManager() );
+        lockManager = new DefaultFileLockManager();
+        fileProcessor.setFileLockManager( lockManager );
     }
 
     @After
@@ -718,4 +722,26 @@ public class LockingFileProcessorTest
         assertTrue( "Custom java.io.File hasn't been called, test setup invalid", read.get() );
     }
 
+    @Test
+    public void testMoveCurrentThreadHoldsWriteLock()
+        throws IOException
+    {
+        File src = TestFileUtils.createTempFile( "src" );
+        File target = TestFileUtils.createTempFile( "target" );
+        Lock lock = lockManager.writeLock( src );
+        lock.lock();
+
+        try
+        {
+            fileProcessor.move( src, target );
+            TestFileUtils.assertContent( "src", target );
+            assertEquals( false, src.exists() );
+        }
+        finally
+        {
+            lock.unlock();
+            TestFileUtils.delete( src );
+            TestFileUtils.delete( target );
+        }
+    }
 }
