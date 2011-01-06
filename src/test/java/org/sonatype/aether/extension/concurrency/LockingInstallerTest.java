@@ -150,7 +150,7 @@ public class LockingInstallerTest
         assertTrue( result.getMetadata().contains( metadata ) );
     }
 
-    // FIXME: @Test
+    @Test
     public void testRepeatedInstallOfArtifactWhichGotOpenedForReadingInTheMeantime()
         throws InstallationException, UnsupportedEncodingException, IOException
     {

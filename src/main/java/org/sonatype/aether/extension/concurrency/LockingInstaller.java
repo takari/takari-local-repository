@@ -480,8 +480,9 @@ public class LockingInstaller
         for ( Artifact a : result.getArtifacts() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalArtifact( a ) );
+            File backupFile = backupFile( a, dstFile );
 
-            if ( backupFile( a, dstFile ).exists() && !backupFile( a, dstFile ).renameTo( dstFile ) )
+            if ( backupFile.exists() && !rename( backupFile, dstFile ) )
             {
                 failures = true;
             }
@@ -493,8 +494,9 @@ public class LockingInstaller
         for ( Metadata m : result.getMetadata() )
         {
             File dstFile = new File( basedir, lrm.getPathForLocalMetadata( m ) );
+            File backupFile = backupFile( m, dstFile );
 
-            if ( backupFile( m, dstFile ).exists() && !backupFile( m, dstFile ).renameTo( dstFile ) )
+            if ( backupFile.exists() && !rename( backupFile, dstFile ) )
             {
                 failures = true;
             }
@@ -551,13 +553,8 @@ public class LockingInstaller
         if ( file.exists() && stage( ctx, file ).exists() )
         {
             File backupFile = backupFile( ctx, file );
-            boolean renamed = file.renameTo( backupFile );
-
-            if ( !renamed )
-            {
-                logger.debug( String.format( "Could not rename %s to %s, copying instead.", file, backupFile ) );
-                fileProcessor.copy( file, backupFile( ctx, file ), null );
-            }
+            // NOTE: The destination file might be in use, so copy it, don't move/delete.
+            fileProcessor.copy( file, backupFile, null );
         }
         else
         {
@@ -701,6 +698,20 @@ public class LockingInstaller
         throws IOException
     {
         unlock( ctx.getLocks() );
+    }
+
+    private boolean rename( File source, File target )
+    {
+        try
+        {
+            fileProcessor.move( source, target );
+            return true;
+        }
+        catch ( IOException e )
+        {
+            logger.debug( "Failed to move " + source + " -> " + target + ": " + e.getMessage() );
+            return false;
+        }
     }
 
     private class InstallerContext
