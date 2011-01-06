@@ -26,7 +26,6 @@ import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.RepositoryEvent.EventType;
 import org.sonatype.aether.RepositoryException;
-import org.sonatype.aether.RepositoryListener;
 import org.sonatype.aether.RepositorySystemSession;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.impl.Installer;
@@ -34,6 +33,7 @@ import org.sonatype.aether.impl.LocalRepositoryEvent;
 import org.sonatype.aether.impl.LocalRepositoryMaintainer;
 import org.sonatype.aether.impl.MetadataGenerator;
 import org.sonatype.aether.impl.MetadataGeneratorFactory;
+import org.sonatype.aether.impl.RepositoryEventDispatcher;
 import org.sonatype.aether.installation.InstallRequest;
 import org.sonatype.aether.installation.InstallResult;
 import org.sonatype.aether.installation.InstallationException;
@@ -59,6 +59,7 @@ import org.sonatype.aether.util.listener.DefaultRepositoryEvent;
  * @author Benjamin Bentmann
  * @author Benjamin Hanzelmann
  */
+@SuppressWarnings( "deprecation" )
 @Component( role = Installer.class, hint = "default" )
 public class LockingInstaller
     implements Installer, Service
@@ -69,6 +70,9 @@ public class LockingInstaller
 
     @Requirement
     private FileProcessor fileProcessor;
+
+    @Requirement
+    private RepositoryEventDispatcher repositoryEventDispatcher;
 
     @Requirement( role = LocalRepositoryMaintainer.class )
     private List<LocalRepositoryMaintainer> localRepositoryMaintainers = new ArrayList<LocalRepositoryMaintainer>();
@@ -95,12 +99,13 @@ public class LockingInstaller
     }
 
     public LockingInstaller( Logger logger, FileProcessor fileProcessor,
+                             RepositoryEventDispatcher repositoryEventDispatcher,
                              List<MetadataGeneratorFactory> metadataFactories,
-                             List<LocalRepositoryMaintainer> localRepositoryMaintainers,
-                             FileLockManager fileLockManager )
+                             List<LocalRepositoryMaintainer> localRepositoryMaintainers, FileLockManager fileLockManager )
     {
         setLogger( logger );
         setFileProcessor( fileProcessor );
+        setRepositoryEventDispatcher( repositoryEventDispatcher );
         setFileLockManager( fileLockManager );
         setMetadataFactories( metadataFactories );
         setLocalRepositoryMaintainers( localRepositoryMaintainers );
@@ -110,6 +115,7 @@ public class LockingInstaller
     {
         setLogger( locator.getService( Logger.class ) );
         setFileProcessor( locator.getService( FileProcessor.class ) );
+        setRepositoryEventDispatcher( repositoryEventDispatcher );
         setFileLockManager( locator.getService( FileLockManager.class ) );
         setLocalRepositoryMaintainers( locator.getServices( LocalRepositoryMaintainer.class ) );
         setMetadataFactories( locator.getServices( MetadataGeneratorFactory.class ) );
@@ -134,6 +140,16 @@ public class LockingInstaller
             throw new IllegalArgumentException( "file processor has not been specified" );
         }
         this.fileProcessor = fileProcessor;
+        return this;
+    }
+
+    public LockingInstaller setRepositoryEventDispatcher( RepositoryEventDispatcher repositoryEventDispatcher )
+    {
+        if ( repositoryEventDispatcher == null )
+        {
+            throw new IllegalArgumentException( "repository event dispatcher has not been specified" );
+        }
+        this.repositoryEventDispatcher = repositoryEventDispatcher;
         return this;
     }
 
@@ -188,7 +204,6 @@ public class LockingInstaller
     {
         InstallerContext ctx = new InstallerContext();
 
-
         InstallResult result = new InstallResult( request );
 
         List<MetadataGenerator> generators = getMetadataGenerators( session, request );
@@ -196,7 +211,6 @@ public class LockingInstaller
         List<Artifact> artifacts = new ArrayList<Artifact>( request.getArtifacts() );
 
         IdentityHashMap<Metadata, Object> processedMetadata = new IdentityHashMap<Metadata, Object>();
-
 
         boolean installFailed = false;
         try
@@ -230,7 +244,7 @@ public class LockingInstaller
                 }
 
                 result.setArtifacts( artifacts );
-                
+
                 for ( Metadata metadata : request.getMetadata() )
                 {
                     if ( !processedMetadata.containsKey( metadata ) )
@@ -254,7 +268,7 @@ public class LockingInstaller
                 {
                     install( session, artifact, ctx );
                 }
-                
+
                 for ( Metadata metadata : result.getMetadata() )
                 {
                     install( session, metadata );
@@ -541,8 +555,7 @@ public class LockingInstaller
 
             if ( !renamed )
             {
-                logger.debug( String.format( "Could not rename %s to %s, copying instead.", file,
-                                             backupFile ) );
+                logger.debug( String.format( "Could not rename %s to %s, copying instead.", file, backupFile ) );
                 fileProcessor.copy( file, backupFile( ctx, file ), null );
             }
         }
@@ -588,58 +601,46 @@ public class LockingInstaller
 
     private void artifactInstalling( RepositorySystemSession session, Artifact artifact, File dstFile )
     {
-        RepositoryListener listener = session.getRepositoryListener();
-        if ( listener != null )
-        {
-            DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.ARTIFACT_INSTALLING, session );
-            event.setArtifact( artifact );
-            event.setRepository( session.getLocalRepositoryManager().getRepository() );
-            event.setFile( dstFile );
-            listener.artifactInstalling( event );
-        }
+        DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.ARTIFACT_INSTALLING, session );
+        event.setArtifact( artifact );
+        event.setRepository( session.getLocalRepositoryManager().getRepository() );
+        event.setFile( dstFile );
+
+        repositoryEventDispatcher.dispatch( event );
     }
 
     private void artifactInstalled( RepositorySystemSession session, Artifact artifact, File dstFile,
                                     Exception exception )
     {
-        RepositoryListener listener = session.getRepositoryListener();
-        if ( listener != null )
-        {
-            DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.ARTIFACT_INSTALLED, session );
-            event.setArtifact( artifact );
-            event.setRepository( session.getLocalRepositoryManager().getRepository() );
-            event.setFile( dstFile );
-            event.setException( exception );
-            listener.artifactInstalled( event );
-        }
+        DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.ARTIFACT_INSTALLED, session );
+        event.setArtifact( artifact );
+        event.setRepository( session.getLocalRepositoryManager().getRepository() );
+        event.setFile( dstFile );
+        event.setException( exception );
+
+        repositoryEventDispatcher.dispatch( event );
     }
 
     private void metadataInstalling( RepositorySystemSession session, Metadata metadata, File dstFile )
     {
-        RepositoryListener listener = session.getRepositoryListener();
-        if ( listener != null )
-        {
-            DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.METADATA_INSTALLING, session );
-            event.setMetadata( metadata );
-            event.setRepository( session.getLocalRepositoryManager().getRepository() );
-            event.setFile( dstFile );
-            listener.metadataInstalling( event );
-        }
+        DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.METADATA_INSTALLING, session );
+        event.setMetadata( metadata );
+        event.setRepository( session.getLocalRepositoryManager().getRepository() );
+        event.setFile( dstFile );
+
+        repositoryEventDispatcher.dispatch( event );
     }
 
     private void metadataInstalled( RepositorySystemSession session, Metadata metadata, File dstFile,
                                     Exception exception )
     {
-        RepositoryListener listener = session.getRepositoryListener();
-        if ( listener != null )
-        {
-            DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.METADATA_INSTALLED, session );
-            event.setMetadata( metadata );
-            event.setRepository( session.getLocalRepositoryManager().getRepository() );
-            event.setFile( dstFile );
-            event.setException( exception );
-            listener.metadataInstalled( event );
-        }
+        DefaultRepositoryEvent event = new DefaultRepositoryEvent( EventType.METADATA_INSTALLED, session );
+        event.setMetadata( metadata );
+        event.setRepository( session.getLocalRepositoryManager().getRepository() );
+        event.setFile( dstFile );
+        event.setException( exception );
+
+        repositoryEventDispatcher.dispatch( event );
     }
 
     private synchronized void lockAll( RepositorySystemSession session, InstallResult result, InstallerContext ctx )
@@ -705,7 +706,7 @@ public class LockingInstaller
     private class InstallerContext
     {
         private List<Lock> locks = new LinkedList<Lock>();
-    
+
         private Map<Artifact, LocalArtifactRegistration> registrations =
             new HashMap<Artifact, LocalArtifactRegistration>();
 

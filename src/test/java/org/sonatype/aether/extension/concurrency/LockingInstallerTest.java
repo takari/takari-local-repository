@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonatype.aether.RepositoryEvent;
 import org.sonatype.aether.artifact.Artifact;
+import org.sonatype.aether.impl.RepositoryEventDispatcher;
 import org.sonatype.aether.impl.internal.DefaultFileProcessor;
 import org.sonatype.aether.installation.InstallRequest;
 import org.sonatype.aether.installation.InstallResult;
@@ -73,6 +74,8 @@ public class LockingInstallerTest
 
     private Process process;
 
+    private RepositoryEventDispatcher repositoryEventDispatcher;
+
     @Before
     public void setup()
         throws IOException
@@ -89,8 +92,9 @@ public class LockingInstallerTest
         localArtifactFile = new File( session.getLocalRepository().getBasedir(), localArtifactPath );
         localMetadataFile = new File( session.getLocalRepository().getBasedir(), localMetadataPath );
         fileLockManager = new DefaultFileLockManager();
+        repositoryEventDispatcher = new StubRepositoryEventDispatcher();
         installer =
-            new LockingInstaller().setFileProcessor( TestFileProcessor.INSTANCE ).setFileLockManager( fileLockManager );
+            new LockingInstaller().setFileProcessor( TestFileProcessor.INSTANCE ).setFileLockManager( fileLockManager ).setRepositoryEventDispatcher( repositoryEventDispatcher );
         // logger = new SyserrLogger();
         // installer.setLogger( logger );
         request = new InstallRequest();
