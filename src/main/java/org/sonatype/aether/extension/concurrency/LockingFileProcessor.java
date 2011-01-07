@@ -60,7 +60,7 @@ public class LockingFileProcessor
             }
             catch ( IOException e )
             {
-                logger.warn( "Failed to unlock file: " + e );
+                logger.warn( "Failed to unlock file " + lock.getFile() + ": " + e );
             }
         }
     }
