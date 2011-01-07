@@ -25,7 +25,6 @@ import java.util.TreeSet;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.RepositoryEvent.EventType;
-import org.sonatype.aether.RepositoryException;
 import org.sonatype.aether.RepositorySystemSession;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.impl.Installer;
@@ -470,7 +469,7 @@ public class LockingInstaller
     }
 
     private void rollback( RepositorySystemSession session, InstallResult result )
-        throws IOException, RepositoryException
+        throws IOException
     {
         boolean failures = false;
 
