@@ -688,9 +688,30 @@ public class LockingInstaller
     private void unlock( List<Lock> locks )
         throws IOException
     {
+        IOException ex = null;
+        int counter = 0;
         for ( Lock writeLock : locks )
         {
-            writeLock.unlock();
+            try
+            {
+                writeLock.unlock();
+            }
+            catch ( IOException t )
+            {
+                if ( ex != null )
+                {
+                    ex = t;
+                    counter++;
+                }
+            }
+        }
+
+        if ( counter > 0 )
+        {
+            IOException ioe =
+                new IOException( "Unlocking failed for " + counter + " locks. First failure: " + ex.getMessage() );
+            ioe.initCause( ex );
+            throw ioe;
         }
     }
 
