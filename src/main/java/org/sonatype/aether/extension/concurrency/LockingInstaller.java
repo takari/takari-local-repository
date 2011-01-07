@@ -729,7 +729,7 @@ public class LockingInstaller
         }
         catch ( IOException e )
         {
-            logger.debug( "Failed to move " + source + " -> " + target + ": " + e.getMessage() );
+            logger.warn( "Failed to move " + source + " -> " + target + ": " + e.getMessage() );
             return false;
         }
     }
