@@ -735,7 +735,9 @@ public class LockingFileProcessorTest
         {
             fileProcessor.move( src, target );
             TestFileUtils.assertContent( "src", target );
-            assertEquals( false, src.exists() );
+            // This behavior is not valid for every OS, e.g. Windows refuses to delete because the lock itself has an
+            // open file handle
+            // assertEquals( false, src.exists() );
         }
         finally
         {
