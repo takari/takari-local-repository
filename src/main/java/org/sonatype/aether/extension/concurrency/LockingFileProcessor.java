@@ -211,6 +211,9 @@ public class LockingFileProcessor
 
                 target.setLastModified( source.lastModified() );
 
+                // NOTE: Close the file handle to enable its deletion but don't release the lock yet.
+                sourceLock.getRandomAccessFile().close();
+
                 source.delete();
             }
         }
