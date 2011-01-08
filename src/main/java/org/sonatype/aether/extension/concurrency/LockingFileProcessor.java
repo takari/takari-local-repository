@@ -208,6 +208,8 @@ public class LockingFileProcessor
                 copy( sourceLock.getRandomAccessFile(), targetLock.getRandomAccessFile(), null );
 
                 unlock( targetLock );
+                // set to null to prevent (unbalanced) unlocking in finally-block
+                targetLock = null;
 
                 target.setLastModified( source.lastModified() );
 
