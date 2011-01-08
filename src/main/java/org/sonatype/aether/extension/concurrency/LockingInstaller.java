@@ -41,6 +41,7 @@ import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.metadata.MergeableMetadata;
 import org.sonatype.aether.metadata.Metadata;
 import org.sonatype.aether.repository.LocalArtifactRegistration;
+import org.sonatype.aether.repository.LocalMetadataRegistration;
 import org.sonatype.aether.repository.LocalRepositoryManager;
 import org.sonatype.aether.spi.io.FileProcessor;
 import org.sonatype.aether.spi.locator.Service;
@@ -270,7 +271,7 @@ public class LockingInstaller
 
                 for ( Metadata metadata : result.getMetadata() )
                 {
-                    install( session, metadata );
+                    install( session, metadata, ctx );
                 }
 
             }
@@ -344,7 +345,7 @@ public class LockingInstaller
                 logger.debug( "Skipped re-installing " + srcFile + " to " + dstFile + ", seems unchanged" );
             }
 
-            ctx.getRegistrations().put( artifact, new LocalArtifactRegistration( artifact ) );
+            ctx.getArtifactRegistrations().put( artifact, new LocalArtifactRegistration( artifact ) );
         }
         catch ( Exception e )
         {
@@ -352,7 +353,7 @@ public class LockingInstaller
         }
     }
 
-    private void install( RepositorySystemSession session, Metadata metadata )
+    private void install( RepositorySystemSession session, Metadata metadata, InstallerContext ctx )
         throws InstallationException
     {
 
@@ -372,6 +373,7 @@ public class LockingInstaller
             {
                 fileProcessor.copy( metadata.getFile(), stage( metadata, dstFile ), null );
             }
+            ctx.getMetadataRegistrations().put( metadata, new LocalMetadataRegistration( metadata ) );
         }
         catch ( Exception e )
         {
@@ -404,7 +406,7 @@ public class LockingInstaller
                         fileProcessor.move( transFile, dstFile );
                     }
 
-                    lrm.add( session, ctx.getRegistrations().get( a ) );
+                    lrm.add( session, ctx.getArtifactRegistrations().get( a ) );
 
                     if ( !localRepositoryMaintainers.isEmpty() )
                     {
@@ -439,6 +441,7 @@ public class LockingInstaller
                     mark( m, dstFile );
 
                     fileProcessor.move( transFile, dstFile );
+                    lrm.add( session, ctx.getMetadataRegistrations().get( m ) );
                 }
                 catch ( Exception e )
                 {
@@ -732,17 +735,25 @@ public class LockingInstaller
     {
         private List<Lock> locks = new LinkedList<Lock>();
 
-        private Map<Artifact, LocalArtifactRegistration> registrations =
+        private Map<Artifact, LocalArtifactRegistration> artifactRegistrations =
             new HashMap<Artifact, LocalArtifactRegistration>();
+
+        private Map<Metadata, LocalMetadataRegistration> metadataRegistrations =
+            new HashMap<Metadata, LocalMetadataRegistration>();
 
         public List<Lock> getLocks()
         {
             return locks;
         }
 
-        public Map<Artifact, LocalArtifactRegistration> getRegistrations()
+        public Map<Artifact, LocalArtifactRegistration> getArtifactRegistrations()
         {
-            return registrations;
+            return artifactRegistrations;
+        }
+
+        protected Map<Metadata, LocalMetadataRegistration> getMetadataRegistrations()
+        {
+            return metadataRegistrations;
         }
     }
 
