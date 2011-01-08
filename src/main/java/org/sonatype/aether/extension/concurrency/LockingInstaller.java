@@ -298,7 +298,7 @@ public class LockingInstaller
             cleanup( session, result );
             try
             {
-                unlock( ctx );
+                unlock( ctx.getLocks() );
             }
             catch ( IOException e )
             {
@@ -401,9 +401,7 @@ public class LockingInstaller
                     // no temporary -> unchanged src file, no error
                     if ( transFile.exists() )
                     {
-                        long ts = transFile.lastModified();
                         fileProcessor.move( transFile, dstFile );
-                        dstFile.setLastModified( ts );
                     }
 
                     lrm.add( session, ctx.getRegistrations().get( a ) );
@@ -506,7 +504,7 @@ public class LockingInstaller
         }
         if ( failures )
         {
-            throw new IOException( "Installation failed: " + result );
+            throw new IOException( "Installation failed (errors on rollback): " + result );
         }
     }
 
@@ -697,10 +695,12 @@ public class LockingInstaller
             }
             catch ( IOException t )
             {
+                counter++;
+                logger.debug( "Problem unlocking " + writeLock.getFile(), t );
+
                 if ( ex != null )
                 {
                     ex = t;
-                    counter++;
                 }
             }
         }
@@ -712,12 +712,6 @@ public class LockingInstaller
             ioe.initCause( ex );
             throw ioe;
         }
-    }
-
-    private void unlock( InstallerContext ctx )
-        throws IOException
-    {
-        unlock( ctx.getLocks() );
     }
 
     private boolean rename( File source, File target )
