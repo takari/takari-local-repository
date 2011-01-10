@@ -338,7 +338,7 @@ public class LockingInstaller
             if ( copy )
             {
                 fileProcessor.copy( srcFile, stagedFile, null );
-                stagedFile.setLastModified( srcFile.lastModified() );
+                FileUtils.setLastModified( stagedFile, srcFile.lastModified(), fileLockManager );
             }
             else
             {

@@ -12,6 +12,8 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 
+import org.sonatype.aether.locking.FileLockManager;
+import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.spi.log.Logger;
 
 /**
@@ -75,6 +77,48 @@ class FileUtils
                 }
             }
         }
+    }
+
+    /**
+     * Locking variant of {@link File#setLastModified(long)}.
+     * 
+     * @param file the file that should have its last modified time set, must not be {@code null}.
+     * @param time the time to set.
+     * @param lockManager the lock manager to use, must not be {@link NullPointerException}.
+     * @return {@code true} if and only if {@link File#setLastModified(long)} succeeded; false otherwise.
+     * @throws IOException if {@link Lock#lock()} or {@link Lock#unlock()} throw an IOException.
+     */
+    public static boolean setLastModified( File file, long time, FileLockManager lockManager )
+        throws IOException
+    {
+        Lock lock = lockManager.writeLock( file );
+        IOException exception = null;
+        try
+        {
+            lock.lock();
+            return file.setLastModified( time );
+        }
+        catch ( IOException e )
+        {
+            exception = e;
+            throw e;
+        }
+        finally
+        {
+            try
+            {
+                lock.unlock();
+            }
+            catch ( IOException e )
+            {
+                if ( exception != null )
+                {
+                    throw e;
+                }
+            }
+
+        }
+
     }
 
 }
