@@ -207,14 +207,12 @@ public class LockingFileProcessor
             {
                 copy( sourceLock.getRandomAccessFile(), targetLock.getRandomAccessFile(), null );
 
-                unlock( targetLock );
-                // set to null to prevent (unbalanced) unlocking in finally-block
-                targetLock = null;
+                FileUtils.close( targetLock.getRandomAccessFile(), logger );
 
                 target.setLastModified( source.lastModified() );
 
                 // NOTE: Close the file handle to enable its deletion but don't release the lock yet.
-                sourceLock.getRandomAccessFile().close();
+                FileUtils.close( sourceLock.getRandomAccessFile(), logger );
 
                 source.delete();
             }
