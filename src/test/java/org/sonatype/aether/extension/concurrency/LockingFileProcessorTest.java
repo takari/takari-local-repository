@@ -694,8 +694,8 @@ public class LockingFileProcessorTest
                     /*
                      * NOTE: This exploits implementation details of the DefaultFileLockManager which will first acquire
                      * the file lock and then update a hash map with the canonical file as key, thereby invoking this
-                     * method. If there's a more robust way to read the file after the lock has been acquired, you're to
-                     * replace this code.
+                     * method. If there's a more robust way to read the file after the lock has been acquired, you're
+                     * invited to replace this code.
                      */
                     try
                     {
