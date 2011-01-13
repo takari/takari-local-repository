@@ -8,6 +8,7 @@ package org.sonatype.aether.extension.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -52,6 +53,21 @@ public class LockingFileProcessor
         setFileLockManager( fileLockManager );
     }
 
+    private void close( Closeable closeable )
+    {
+        if ( closeable != null )
+        {
+            try
+            {
+                closeable.close();
+            }
+            catch ( IOException e )
+            {
+                logger.warn( "Failed to close file: " + e );
+            }
+        }
+    }
+
     private void unlock( Lock lock )
     {
         if ( lock != null )
@@ -68,11 +84,36 @@ public class LockingFileProcessor
     }
 
     /**
-     * @see FileUtils#mkdirs(File)
+     * Thread-safe variant of {@link File#mkdirs()}. Adapted from Java 6.
      */
     public boolean mkdirs( File directory )
     {
-        return FileUtils.mkdirs( directory );
+        if ( directory == null )
+        {
+            return false;
+        }
+
+        if ( directory.exists() )
+        {
+            return false;
+        }
+        if ( directory.mkdir() )
+        {
+            return true;
+        }
+
+        File canonDir = null;
+        try
+        {
+            canonDir = directory.getCanonicalFile();
+        }
+        catch ( IOException e )
+        {
+            return false;
+        }
+
+        File parentDir = canonDir.getParentFile();
+        return ( parentDir != null && ( mkdirs( parentDir ) || parentDir.exists() ) && canonDir.mkdir() );
     }
 
     /**
@@ -226,7 +267,7 @@ public class LockingFileProcessor
                     logger.debug( "Updates of file modification timestamp are safe: " + IS_SET_LAST_MODIFIED_SAFE );
                 }
 
-                FileUtils.close( targetLock.getRandomAccessFile(), logger );
+                close( targetLock.getRandomAccessFile() );
 
                 if ( IS_SET_LAST_MODIFIED_SAFE.booleanValue() )
                 {
@@ -234,7 +275,7 @@ public class LockingFileProcessor
                 }
 
                 // NOTE: Close the file handle to enable its deletion but don't release the lock yet.
-                FileUtils.close( sourceLock.getRandomAccessFile(), logger );
+                close( sourceLock.getRandomAccessFile() );
 
                 source.delete();
             }
