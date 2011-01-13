@@ -91,28 +91,34 @@ class LockingSycnContext
 
     private void addArtifactPaths( Collection<String> paths, Collection<? extends Artifact> artifacts )
     {
-        for ( Artifact artifact : artifacts )
+        if ( artifacts != null )
         {
-            String path = localRepoMan.getPathForLocalArtifact( artifact );
-            path = normalizePath( path );
-            paths.add( path );
+            for ( Artifact artifact : artifacts )
+            {
+                String path = localRepoMan.getPathForLocalArtifact( artifact );
+                path = normalizePath( path );
+                paths.add( path );
+            }
         }
     }
 
     private void addMetadataPaths( Collection<String> paths, Collection<? extends Metadata> metadatas )
     {
-        for ( Metadata metadata : metadatas )
+        if ( metadatas != null )
         {
-            String path = localRepoMan.getPathForLocalMetadata( metadata );
-            path = normalizePath( path );
-            paths.add( path );
+            for ( Metadata metadata : metadatas )
+            {
+                String path = localRepoMan.getPathForLocalMetadata( metadata );
+                path = normalizePath( path );
+                paths.add( path );
+            }
         }
     }
 
     private String normalizePath( String path )
     {
         int index = path.lastIndexOf( '/' );
-        path = path.substring( 0, index ) + "_sync";
+        path = path.substring( 0, index + 1 ) + "_sync";
         return path;
     }
 
