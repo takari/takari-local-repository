@@ -36,6 +36,7 @@ import org.sonatype.aether.repository.LocalRepositoryManager;
 import org.sonatype.aether.spi.log.Logger;
 import org.sonatype.aether.test.impl.RecordingRepositoryListener;
 import org.sonatype.aether.test.impl.RecordingRepositoryListener.EventWrapper;
+import org.sonatype.aether.test.impl.SysoutLogger;
 import org.sonatype.aether.test.impl.TestFileProcessor;
 import org.sonatype.aether.test.impl.TestRepositorySystemSession;
 import org.sonatype.aether.test.util.TestFileUtils;
@@ -87,6 +88,7 @@ public class LockingInstallerTest
             new StubMetadata( "gid", "aid", "ver", "type", Nature.RELEASE_OR_SNAPSHOT,
                               TestFileUtils.createTempFile( "metadata".getBytes(), 1 ) );
 
+        SysoutLogger logger = new SysoutLogger();
         session = new TestRepositorySystemSession();
         localArtifactPath = session.getLocalRepositoryManager().getPathForLocalArtifact( artifact );
         localMetadataPath = session.getLocalRepositoryManager().getPathForLocalMetadata( metadata );
@@ -97,9 +99,8 @@ public class LockingInstallerTest
         installer = new LockingInstaller();
         installer.setFileLockManager( fileLockManager );
         installer.setRepositoryEventDispatcher( repositoryEventDispatcher );
-        installer.setFileProcessor( new LockingFileProcessor( fileLockManager ) );
-        // logger = new SyserrLogger();
-        // installer.setLogger( logger );
+        installer.setFileProcessor( new LockingFileProcessor( fileLockManager ).setLogger( logger ) );
+        installer.setLogger( logger );
         request = new InstallRequest();
         listener = new RecordingRepositoryListener();
         session.setRepositoryListener( listener );

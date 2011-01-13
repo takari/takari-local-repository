@@ -15,6 +15,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
@@ -744,4 +748,80 @@ public class LockingFileProcessorTest
             TestFileUtils.delete( target );
         }
     }
+
+    @Test
+    public void testConcurrentlyMoveToSameDestinationWhichGetsReadByThirdPartyWithoutLocking()
+        throws Exception
+    {
+        final File target = TestFileUtils.createTempFile( "test" );
+        final Collection<Throwable> errors = Collections.synchronizedList( new ArrayList<Throwable>() );
+        final CountDownLatch latch = new CountDownLatch( 3 );
+
+        Runnable runnable = new Runnable()
+        {
+
+            public void run()
+            {
+                try
+                {
+                    for ( int i = 100; i > 0; i-- )
+                    {
+                        try
+                        {
+                            File source = TestFileUtils.createTempFile( "test" );
+                            fileProcessor.move( source, target );
+                        }
+                        catch ( Exception e )
+                        {
+                            errors.add( e );
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                finally
+                {
+                    latch.countDown();
+                }
+            }
+
+        };
+
+        Thread threads[] = new Thread[(int) latch.getCount()];
+        threads[0] = new Thread()
+        {
+            public void run()
+            {
+                while ( latch.getCount() > 1 )
+                {
+                    try
+                    {
+                        TestFileUtils.assertContent( "test", target );
+                    }
+                    catch ( Exception e )
+                    {
+                        errors.add( e );
+                        e.printStackTrace();
+                    }
+                    catch ( AssertionError e )
+                    {
+                        errors.add( e );
+                        e.printStackTrace();
+                    }
+                }
+                latch.countDown();
+            }
+        };
+        for ( int i = 1; i < threads.length; i++ )
+        {
+            threads[i] = new Thread( runnable );
+        }
+        for ( int i = 0; i < threads.length; i++ )
+        {
+            threads[i].start();
+        }
+        latch.await();
+
+        assertEquals( Collections.emptyList(), errors );
+    }
+
 }

@@ -338,7 +338,6 @@ public class LockingInstaller
             if ( copy )
             {
                 fileProcessor.copy( srcFile, stagedFile, null );
-                stagedFile.setLastModified( srcFile.lastModified() );
             }
             else
             {
@@ -404,6 +403,7 @@ public class LockingInstaller
                     if ( transFile.exists() )
                     {
                         fileProcessor.move( transFile, dstFile );
+                        dstFile.setLastModified( a.getFile().lastModified() );
                     }
 
                     lrm.add( session, ctx.getArtifactRegistrations().get( a ) );

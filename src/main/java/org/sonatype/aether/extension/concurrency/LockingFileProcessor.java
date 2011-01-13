@@ -34,6 +34,8 @@ public class LockingFileProcessor
     implements FileProcessor, Service
 {
 
+    private static Boolean IS_SET_LAST_MODIFIED_SAFE;
+
     @Requirement
     private Logger logger = NullLogger.INSTANCE;
 
@@ -207,9 +209,29 @@ public class LockingFileProcessor
             {
                 copy( sourceLock.getRandomAccessFile(), targetLock.getRandomAccessFile(), null );
 
+                /*
+                 * NOTE: On Windows and before JRE 1.7, File.setLastModified() opens the file without any sharing
+                 * enabled (cf. evaluation of Sun bug 6357599). This means while setLastModified() is executing, no
+                 * other thread/process can open the file "because it is being used by another process". The read
+                 * accesses to files can't always be guarded by locks, take for instance class loaders reading JARs, so
+                 * we must avoid calling setLastModified() completely on the affected platforms to enable safe
+                 * concurrent IO. The setLastModified() call below while the file is still open is generally ineffective
+                 * as the OS will update the timestamp after closing the file (at least Windows does so). But its
+                 * failure allows us to detect the problematic platforms. The destination file not having the same
+                 * timestamp as the source file isn't overly beauty but shouldn't actually matter in real life either.
+                 */
+                if ( IS_SET_LAST_MODIFIED_SAFE == null )
+                {
+                    IS_SET_LAST_MODIFIED_SAFE = Boolean.valueOf( target.setLastModified( source.lastModified() ) );
+                    logger.debug( "Updates of file modification timestamp are safe: " + IS_SET_LAST_MODIFIED_SAFE );
+                }
+
                 FileUtils.close( targetLock.getRandomAccessFile(), logger );
 
-                target.setLastModified( source.lastModified() );
+                if ( IS_SET_LAST_MODIFIED_SAFE.booleanValue() )
+                {
+                    target.setLastModified( source.lastModified() );
+                }
 
                 // NOTE: Close the file handle to enable its deletion but don't release the lock yet.
                 FileUtils.close( sourceLock.getRandomAccessFile(), logger );
