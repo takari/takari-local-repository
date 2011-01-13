@@ -60,7 +60,7 @@ import org.sonatype.aether.util.listener.DefaultRepositoryEvent;
  * @author Benjamin Hanzelmann
  */
 @SuppressWarnings( "deprecation" )
-@Component( role = Installer.class, hint = "default" )
+//@Component( role = Installer.class, hint = "default" )
 public class LockingInstaller
     implements Installer, Service
 {
