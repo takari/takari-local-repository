@@ -109,26 +109,9 @@ public class LockingFileProcessorTest
 
         fileProcessor.copy( file, target, null );
 
-        assertContent( target, contents.getBytes( "UTF-8" ) );
+        TestFileUtils.assertContent( contents, target );
 
         file.delete();
-    }
-
-    private void assertContent( File file, byte[] content )
-        throws IOException
-    {
-        RandomAccessFile in = null;
-        try
-        {
-            in = new RandomAccessFile( file, "r" );
-            byte[] buffer = new byte[(int) in.length()];
-            in.readFully( buffer );
-            assertArrayEquals( "content did not match", content, buffer );
-        }
-        finally
-        {
-            in.close();
-        }
     }
 
     @Test
@@ -143,7 +126,7 @@ public class LockingFileProcessorTest
         {
             File target = new File( targetDir, "testOverwrite.txt" );
             fileProcessor.copy( file, target, null );
-            assertContent( target, contents.getBytes( "UTF-8" ) );
+            TestFileUtils.assertContent( contents, target );
         }
 
         file.delete();
@@ -160,7 +143,7 @@ public class LockingFileProcessorTest
 
         fileProcessor.copy( src, dst, null );
 
-        assertContent( dst, contents.getBytes( "UTF-8" ) );
+        TestFileUtils.assertContent( contents, dst );
     }
 
     @SuppressWarnings( "unused" )
