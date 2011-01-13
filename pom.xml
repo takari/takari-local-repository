@@ -32,7 +32,7 @@ http://www.eclipse.org/legal/epl-v10.html
   </scm>
 
   <properties>
-    <aether.version>1.9</aether.version>
+    <aether.version>1.10-SNAPSHOT</aether.version>
   </properties>
 
   <dependencies>
