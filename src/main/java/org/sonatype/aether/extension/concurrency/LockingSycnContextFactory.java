@@ -11,7 +11,7 @@ package org.sonatype.aether.extension.concurrency;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.impl.SyncContext;
+import org.sonatype.aether.SyncContext;
 import org.sonatype.aether.impl.SyncContextFactory;
 import org.sonatype.aether.locking.FileLockManager;
 import org.sonatype.aether.spi.locator.Service;
@@ -20,7 +20,7 @@ import org.sonatype.aether.spi.log.Logger;
 import org.sonatype.aether.spi.log.NullLogger;
 
 /**
- * 
+ * A synchronization context factory that employs OS-level file locks to control access to artifacts/metadatas.
  */
 @Component( role = SyncContextFactory.class )
 public class LockingSycnContextFactory

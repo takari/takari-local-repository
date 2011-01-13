@@ -16,8 +16,8 @@ import java.util.Map;
 import java.util.TreeSet;
 
 import org.sonatype.aether.RepositorySystemSession;
+import org.sonatype.aether.SyncContext;
 import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.impl.SyncContext;
 import org.sonatype.aether.locking.FileLockManager;
 import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.metadata.Metadata;
