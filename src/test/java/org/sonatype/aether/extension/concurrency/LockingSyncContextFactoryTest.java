@@ -41,9 +41,9 @@ public class LockingSyncContextFactoryTest
 
     private RepositorySystemSession session;
 
-    private LockingSycnContextFactory newFactory()
+    private LockingSyncContextFactory newFactory()
     {
-        LockingSycnContextFactory factory = new LockingSycnContextFactory();
+        LockingSyncContextFactory factory = new LockingSyncContextFactory();
         factory.setFileLockManager( new DefaultFileLockManager() );
         factory.setLogger( new SysoutLogger() );
         return factory;

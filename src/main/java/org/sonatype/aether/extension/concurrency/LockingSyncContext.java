@@ -28,7 +28,7 @@ import org.sonatype.aether.spi.log.NullLogger;
 /**
  * 
  */
-class LockingSycnContext
+class LockingSyncContext
     implements SyncContext
 {
 
@@ -42,7 +42,7 @@ class LockingSycnContext
 
     private final Map<String, Lock> locks = new LinkedHashMap<String, Lock>();
 
-    public LockingSycnContext( boolean shared, RepositorySystemSession session, FileLockManager fileLockManager,
+    public LockingSyncContext( boolean shared, RepositorySystemSession session, FileLockManager fileLockManager,
                                Logger logger )
     {
         this.shared = shared;

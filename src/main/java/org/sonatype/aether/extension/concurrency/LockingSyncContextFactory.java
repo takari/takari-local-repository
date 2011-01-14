@@ -23,7 +23,7 @@ import org.sonatype.aether.spi.log.NullLogger;
  * A synchronization context factory that employs OS-level file locks to control access to artifacts/metadatas.
  */
 @Component( role = SyncContextFactory.class )
-public class LockingSycnContextFactory
+public class LockingSyncContextFactory
     implements SyncContextFactory, Service
 {
 
@@ -39,13 +39,13 @@ public class LockingSycnContextFactory
      * @param logger The logger to use, may be {@code null} to disable logging.
      * @return This component for chaining, never {@code null}.
      */
-    public LockingSycnContextFactory setLogger( Logger logger )
+    public LockingSyncContextFactory setLogger( Logger logger )
     {
         this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
         return this;
     }
 
-    public LockingSycnContextFactory setFileLockManager( FileLockManager fileLockManager )
+    public LockingSyncContextFactory setFileLockManager( FileLockManager fileLockManager )
     {
         this.fileLockManager = fileLockManager;
         return this;
@@ -59,7 +59,7 @@ public class LockingSycnContextFactory
 
     public SyncContext newInstance( RepositorySystemSession session, boolean shared )
     {
-        return new LockingSycnContext( shared, session, fileLockManager, logger );
+        return new LockingSyncContext( shared, session, fileLockManager, logger );
     }
 
 }
