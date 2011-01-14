@@ -35,8 +35,6 @@ class LockingSyncContext
 
     private static final char SEPARATOR = '~';
 
-    private static final String SYNC_FILE = "_sync";
-
     private final Logger logger;
 
     private final FileLockManager fileLockManager;
@@ -124,7 +122,6 @@ class LockingSyncContext
         path.append( artifact.getGroupId() ).append( SEPARATOR );
         path.append( artifact.getArtifactId() ).append( SEPARATOR );
         path.append( artifact.getBaseVersion() ).append( SEPARATOR );
-        path.append( SYNC_FILE );
 
         return path.toString();
     }
@@ -161,8 +158,6 @@ class LockingSyncContext
                 }
             }
         }
-
-        path.append( SYNC_FILE );
 
         return path.toString();
     }
