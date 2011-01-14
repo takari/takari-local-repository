@@ -21,6 +21,7 @@ import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.locking.FileLockManager;
 import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.metadata.Metadata;
+import org.sonatype.aether.repository.LocalRepository;
 import org.sonatype.aether.repository.LocalRepositoryManager;
 import org.sonatype.aether.spi.log.Logger;
 import org.sonatype.aether.spi.log.NullLogger;
@@ -31,6 +32,10 @@ import org.sonatype.aether.spi.log.NullLogger;
 class LockingSyncContext
     implements SyncContext
 {
+
+    private static final char SEPARATOR = '~';
+
+    private static final String SYNC_FILE = "_sync";
 
     private final Logger logger;
 
@@ -57,7 +62,7 @@ class LockingSyncContext
         addArtifactPaths( paths, artifacts );
         addMetadataPaths( paths, metadatas );
 
-        File basedir = localRepoMan.getRepository().getBasedir();
+        File basedir = getLockBasedir();
 
         for ( String path : paths )
         {
@@ -89,17 +94,39 @@ class LockingSyncContext
         }
     }
 
+    private File getLockBasedir()
+    {
+        LocalRepository localRepo = localRepoMan.getRepository();
+
+        File basedir = new File( localRepo.getBasedir(), ".locks" );
+
+        return basedir;
+    }
+
     private void addArtifactPaths( Collection<String> paths, Collection<? extends Artifact> artifacts )
     {
         if ( artifacts != null )
         {
             for ( Artifact artifact : artifacts )
             {
-                String path = localRepoMan.getPathForLocalArtifact( artifact );
-                path = normalizePath( path );
+                String path = getPath( artifact );
                 paths.add( path );
             }
         }
+    }
+
+    private String getPath( Artifact artifact )
+    {
+        // NOTE: Don't use LRM.getPath*() as those paths could be different across processes, e.g. due to staging LRMs.
+
+        StringBuilder path = new StringBuilder( 128 );
+
+        path.append( artifact.getGroupId() ).append( SEPARATOR );
+        path.append( artifact.getArtifactId() ).append( SEPARATOR );
+        path.append( artifact.getBaseVersion() ).append( SEPARATOR );
+        path.append( SYNC_FILE );
+
+        return path.toString();
     }
 
     private void addMetadataPaths( Collection<String> paths, Collection<? extends Metadata> metadatas )
@@ -108,18 +135,36 @@ class LockingSyncContext
         {
             for ( Metadata metadata : metadatas )
             {
-                String path = localRepoMan.getPathForLocalMetadata( metadata );
-                path = normalizePath( path );
+                String path = getPath( metadata );
                 paths.add( path );
             }
         }
     }
 
-    private String normalizePath( String path )
+    private String getPath( Metadata metadata )
     {
-        int index = path.lastIndexOf( '/' );
-        path = path.substring( 0, index + 1 ) + "_sync";
-        return path;
+        // NOTE: Don't use LRM.getPath*() as those paths could be different across processes, e.g. due to staging.
+
+        StringBuilder path = new StringBuilder( 128 );
+
+        if ( metadata.getGroupId().length() > 0 )
+        {
+            path.append( metadata.getGroupId() ).append( '~' );
+
+            if ( metadata.getArtifactId().length() > 0 )
+            {
+                path.append( metadata.getArtifactId() ).append( '~' );
+
+                if ( metadata.getVersion().length() > 0 )
+                {
+                    path.append( metadata.getVersion() ).append( '~' );
+                }
+            }
+        }
+
+        path.append( SYNC_FILE );
+
+        return path.toString();
     }
 
     public void release()
