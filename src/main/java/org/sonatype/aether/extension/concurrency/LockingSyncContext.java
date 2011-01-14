@@ -150,11 +150,11 @@ class LockingSyncContext
 
             if ( metadata.getArtifactId().length() > 0 )
             {
-                path.append( '~' ).append( metadata.getArtifactId() );
+                path.append( SEPARATOR ).append( metadata.getArtifactId() );
 
                 if ( metadata.getVersion().length() > 0 )
                 {
-                    path.append( '~' ).append( metadata.getVersion() );
+                    path.append( SEPARATOR ).append( metadata.getVersion() );
                 }
             }
         }
