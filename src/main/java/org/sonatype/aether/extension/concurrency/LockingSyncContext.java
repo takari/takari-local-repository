@@ -121,7 +121,7 @@ class LockingSyncContext
 
         path.append( artifact.getGroupId() ).append( SEPARATOR );
         path.append( artifact.getArtifactId() ).append( SEPARATOR );
-        path.append( artifact.getBaseVersion() ).append( SEPARATOR );
+        path.append( artifact.getBaseVersion() );
 
         return path.toString();
     }
@@ -146,15 +146,15 @@ class LockingSyncContext
 
         if ( metadata.getGroupId().length() > 0 )
         {
-            path.append( metadata.getGroupId() ).append( '~' );
+            path.append( metadata.getGroupId() );
 
             if ( metadata.getArtifactId().length() > 0 )
             {
-                path.append( metadata.getArtifactId() ).append( '~' );
+                path.append( '~' ).append( metadata.getArtifactId() );
 
                 if ( metadata.getVersion().length() > 0 )
                 {
-                    path.append( metadata.getVersion() ).append( '~' );
+                    path.append( '~' ).append( metadata.getVersion() );
                 }
             }
         }
