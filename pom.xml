@@ -22,7 +22,8 @@ http://www.eclipse.org/legal/epl-v10.html
 
   <name>Aether :: Concurrency Extensions</name>
   <description>
-    This extension for Aether contains an installer that is safe for concurrent use.
+    This extension for Aether contains a synchronization context that employs OS-level file locks to enable safe
+    concurrency across processes.
   </description>
 
   <scm>
