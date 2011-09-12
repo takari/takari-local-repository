@@ -117,6 +117,14 @@ http://www.eclipse.org/legal/epl-v10.html
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-component-metadata</artifactId>
         <version>1.5.5</version>
+        <executions>
+          <execution>
+            <id>generate-components-xml</id>
+            <goals>
+              <goal>generate-metadata</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
