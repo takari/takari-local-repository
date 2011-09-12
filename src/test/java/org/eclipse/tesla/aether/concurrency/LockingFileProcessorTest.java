@@ -1,4 +1,4 @@
-package org.sonatype.aether.extension.concurrency;
+package org.eclipse.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -22,11 +22,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
+import org.eclipse.tesla.aether.concurrency.LockingFileProcessor;
+import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonatype.aether.locking.DefaultFileLockManager;
-import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor.ProgressListener;
 import org.sonatype.aether.test.util.TestFileUtils;
 

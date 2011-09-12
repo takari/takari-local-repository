@@ -17,19 +17,21 @@ http://www.eclipse.org/legal/epl-v10.html
     <version>1.12</version>
   </parent>
 
-  <artifactId>aether-concurrency</artifactId>
+  <groupId>org.eclipse.tesla</groupId>
+  <artifactId>tesla-concurrent-localrepo</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>Aether :: Concurrency Extensions</name>
+  <name>Tesla : Concurrent Local Repository</name>
   <description>
     This extension for Aether contains a synchronization context that employs OS-level file locks to enable safe
-    concurrency across processes.
+    concurrent access to the local repository across processes.
   </description>
+  <inceptionYear>2010</inceptionYear>
 
   <scm>
-    <connection>scm:git:git@github.com:sonatype/aether-concurrency.git</connection>
-    <developerConnection>scm:git:git@github.com:sonatype/aether-concurrency.git</developerConnection>
-    <url>http://github.com/sonatype/aether-concurrency</url>
+    <connection>scm:git:git@github.com:etesla/tesla-concurrent-localrepo.git</connection>
+    <developerConnection>scm:git:git@github.com:etesla/tesla-concurrent-localrepo.git</developerConnection>
+    <url>http://github.com/etesla/tesla-concurrent-localrepo</url>
   </scm>
 
   <properties>

@@ -1,4 +1,4 @@
-package org.sonatype.aether.extension.concurrency;
+package org.eclipse.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2011 Sonatype, Inc.
@@ -13,7 +13,6 @@ import org.codehaus.plexus.component.annotations.Requirement;
 import org.sonatype.aether.RepositorySystemSession;
 import org.sonatype.aether.SyncContext;
 import org.sonatype.aether.impl.SyncContextFactory;
-import org.sonatype.aether.locking.FileLockManager;
 import org.sonatype.aether.spi.locator.Service;
 import org.sonatype.aether.spi.locator.ServiceLocator;
 import org.sonatype.aether.spi.log.Logger;

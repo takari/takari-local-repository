@@ -1,4 +1,4 @@
-package org.sonatype.aether.locking;
+package org.eclipse.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -15,10 +15,11 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.eclipse.tesla.aether.concurrency.DefaultFileLockManager;
+import org.eclipse.tesla.aether.concurrency.DefaultFileLockManager.IndirectFileLock;
+import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonatype.aether.locking.DefaultFileLockManager.IndirectFileLock;
-import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.test.impl.SysoutLogger;
 import org.sonatype.aether.test.util.TestFileUtils;
 

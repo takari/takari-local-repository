@@ -1,4 +1,4 @@
-package org.sonatype.aether.extension.concurrency;
+package org.eclipse.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2011 Sonatype, Inc.
@@ -15,11 +15,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
 
+import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
 import org.sonatype.aether.RepositorySystemSession;
 import org.sonatype.aether.SyncContext;
 import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.locking.FileLockManager;
-import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.metadata.Metadata;
 import org.sonatype.aether.repository.LocalRepository;
 import org.sonatype.aether.repository.LocalRepositoryManager;

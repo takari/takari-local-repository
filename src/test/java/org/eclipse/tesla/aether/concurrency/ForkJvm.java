@@ -1,4 +1,4 @@
-package org.sonatype.aether.extension.concurrency;
+package org.eclipse.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.

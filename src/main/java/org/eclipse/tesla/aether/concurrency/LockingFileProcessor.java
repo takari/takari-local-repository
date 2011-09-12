@@ -1,4 +1,4 @@
-package org.sonatype.aether.extension.concurrency;
+package org.eclipse.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -17,8 +17,7 @@ import java.nio.channels.FileLock;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.sonatype.aether.locking.FileLockManager;
-import org.sonatype.aether.locking.FileLockManager.Lock;
+import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
 import org.sonatype.aether.spi.io.FileProcessor;
 import org.sonatype.aether.spi.locator.Service;
 import org.sonatype.aether.spi.locator.ServiceLocator;
@@ -51,6 +50,38 @@ public class LockingFileProcessor
     public LockingFileProcessor( FileLockManager fileLockManager )
     {
         setFileLockManager( fileLockManager );
+    }
+
+    /**
+     * Sets the logger to use for this component.
+     * 
+     * @param logger The logger to use, may be {@code null} to disable logging.
+     * @return This component for chaining, never {@code null}.
+     */
+    public LockingFileProcessor setLogger( Logger logger )
+    {
+        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
+        return this;
+    }
+
+    /**
+     * Sets the LockManager to use.
+     * 
+     * @param lockManager The LockManager to use, may not be {@code null}.
+     */
+    public void setFileLockManager( FileLockManager lockManager )
+    {
+        if ( lockManager == null )
+        {
+            throw new IllegalArgumentException( "LockManager may not be null." );
+        }
+        this.fileLockManager = lockManager;
+    }
+
+    public void initService( ServiceLocator locator )
+    {
+        setFileLockManager( locator.getService( FileLockManager.class ) );
+        setLogger( locator.getService( Logger.class ) );
     }
 
     private void close( Closeable closeable )
@@ -285,38 +316,6 @@ public class LockingFileProcessor
             unlock( sourceLock );
             unlock( targetLock );
         }
-    }
-
-    /**
-     * Sets the logger to use for this component.
-     * 
-     * @param logger The logger to use, may be {@code null} to disable logging.
-     * @return This component for chaining, never {@code null}.
-     */
-    public LockingFileProcessor setLogger( Logger logger )
-    {
-        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
-        return this;
-    }
-
-    /**
-     * Sets the LockManager to use.
-     * 
-     * @param lockManager The LockManager to use, may not be {@code null}.
-     */
-    public void setFileLockManager( FileLockManager lockManager )
-    {
-        if ( lockManager == null )
-        {
-            throw new IllegalArgumentException( "LockManager may not be null." );
-        }
-        this.fileLockManager = lockManager;
-    }
-
-    public void initService( ServiceLocator locator )
-    {
-        setFileLockManager( locator.getService( FileLockManager.class ) );
-        setLogger( locator.getService( Logger.class ) );
     }
 
 }

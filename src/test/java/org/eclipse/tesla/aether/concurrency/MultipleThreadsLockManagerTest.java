@@ -1,4 +1,4 @@
-package org.sonatype.aether.locking;
+package org.eclipse.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -13,10 +13,11 @@ import static org.junit.Assert.*;
 import java.io.File;
 import java.io.IOException;
 
+import org.eclipse.tesla.aether.concurrency.DefaultFileLockManager;
+import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonatype.aether.locking.FileLockManager.Lock;
 import org.sonatype.aether.test.util.TestFileUtils;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
