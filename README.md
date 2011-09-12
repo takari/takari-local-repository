@@ -1,7 +1,9 @@
-Concurrent Aether Installer
-===========================
+Tesla Concurrent Local Repository
+=================================
 
-This project contains installer and file processor components using R/W-locking for
-Files and partitions of the local repository.
+This extension for Tesla enables safe concurrent use of the local repository such that multiple builds can concurrently
+resolve and install artifacts to a shared local repository. This is especially useful for continuous integration systems
+that usually build multiple projects in parallel and want to share the same local repository to reduce disk consumption.
 
-<https://docs.sonatype.com/display/AETHER/Transactional+Aether>
+Note that this extensions is only concerned with the data integrity of the local repository at the artifact/metadata file
+level. It does not provide all-or-nothing installation of artifacts produced by a given build.
