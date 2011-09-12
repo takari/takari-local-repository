@@ -58,11 +58,6 @@ http://www.eclipse.org/legal/epl-v10.html
         <artifactId>aether-test-util</artifactId>
         <version>${aether.version}</version>
       </dependency>
-      <dependency>
-        <groupId>org.sonatype.aether</groupId>
-        <artifactId>aether-locking</artifactId>
-        <version>1.0-SNAPSHOT</version>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -79,10 +74,6 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>org.sonatype.aether</groupId>
       <artifactId>aether-spi</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.sonatype.aether</groupId>
-      <artifactId>aether-locking</artifactId>
     </dependency>
     <dependency>
       <groupId>org.sonatype.aether</groupId>
