@@ -34,7 +34,7 @@ http://www.eclipse.org/legal/epl-v10.html
   </scm>
 
   <properties>
-    <aether.version>1.12</aether.version>
+    <aether.version>1.13.1</aether.version>
   </properties>
 
   <dependencies>
