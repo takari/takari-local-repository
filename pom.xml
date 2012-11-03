@@ -18,7 +18,7 @@ http://www.eclipse.org/legal/epl-v10.html
   </parent>
 
   <artifactId>tesla-concurrent-localrepo</artifactId>
-  <version>0.0.2-SNAPSHOT</version>
+  <version>0.0.2</version>
 
   <name>Tesla : Concurrent Local Repository</name>
   <description>
