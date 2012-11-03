@@ -28,9 +28,9 @@ http://www.eclipse.org/legal/epl-v10.html
   <inceptionYear>2010</inceptionYear>
 
   <scm>
-    <connection>scm:git:git@github.com:etesla/tesla-concurrent-localrepo.git</connection>
-    <developerConnection>scm:git:git@github.com:etesla/tesla-concurrent-localrepo.git</developerConnection>
-    <url>http://github.com/etesla/tesla-concurrent-localrepo</url>
+    <connection>scm:git:git@github.com:tesla/tesla-concurrent-localrepo.git</connection>
+    <developerConnection>scm:git:git@github.com:tesla/tesla-concurrent-localrepo.git</developerConnection>
+    <url>http://github.com/tesla/tesla-concurrent-localrepo</url>
   </scm>
 
   <properties>
