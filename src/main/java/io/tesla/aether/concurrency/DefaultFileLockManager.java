@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -17,10 +17,10 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.sonatype.aether.spi.locator.Service;
-import org.sonatype.aether.spi.locator.ServiceLocator;
-import org.sonatype.aether.spi.log.Logger;
-import org.sonatype.aether.spi.log.NullLogger;
+import org.eclipse.aether.spi.locator.Service;
+import org.eclipse.aether.spi.locator.ServiceLocator;
+import org.eclipse.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.NullLoggerFactory;
 
 /**
  * Offers advisory file locking independently of the platform. With regard to concurrent readers that don't use any file
@@ -37,7 +37,7 @@ public class DefaultFileLockManager
 {
 
     @Requirement
-    private Logger logger = NullLogger.INSTANCE;
+    private Logger logger = NullLoggerFactory.LOGGER;
 
     private static final ConcurrentMap<File, LockFile> lockFiles = new ConcurrentHashMap<File, LockFile>( 64 );
 
@@ -58,7 +58,7 @@ public class DefaultFileLockManager
      */
     public void setLogger( Logger logger )
     {
-        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
+        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
     }
 
     public void initService( ServiceLocator locator )
@@ -166,7 +166,7 @@ public class DefaultFileLockManager
         }
     }
 
-    class IndirectFileLock
+    public class IndirectFileLock
         implements Lock
     {
 

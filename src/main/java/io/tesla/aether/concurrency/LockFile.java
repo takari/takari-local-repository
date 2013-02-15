@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -18,8 +18,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.sonatype.aether.spi.log.Logger;
-import org.sonatype.aether.spi.log.NullLogger;
+import org.eclipse.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.NullLoggerFactory;
 
 /**
  * Manages an {@code *.aetherlock} file. <strong>Note:</strong> This class is not thread-safe and requires external
@@ -46,7 +46,7 @@ class LockFile
 
     public LockFile( File dataFile, Logger logger )
     {
-        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
+        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
 
         this.dataFile = dataFile;
 

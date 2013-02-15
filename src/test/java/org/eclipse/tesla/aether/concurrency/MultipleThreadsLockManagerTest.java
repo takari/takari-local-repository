@@ -8,17 +8,16 @@ package org.eclipse.tesla.aether.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-import static org.junit.Assert.*;
+import io.tesla.aether.concurrency.DefaultFileLockManager;
+import io.tesla.aether.concurrency.FileLockManager.Lock;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.eclipse.tesla.aether.concurrency.DefaultFileLockManager;
-import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
+import org.eclipse.aether.internal.test.util.TestFileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonatype.aether.test.util.TestFileUtils;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
 import edu.umd.cs.mtc.TestFramework;

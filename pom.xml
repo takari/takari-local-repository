@@ -17,8 +17,9 @@ http://www.eclipse.org/legal/epl-v10.html
     <version>4</version>
   </parent>
 
+  <groupId>io.tesla.aether</groupId>
   <artifactId>tesla-concurrent-localrepo</artifactId>
-  <version>0.0.3-SNAPSHOT</version>
+  <version>0.0.1-SNAPSHOT</version>
 
   <name>Tesla : Concurrent Local Repository</name>
   <description>
@@ -34,7 +35,7 @@ http://www.eclipse.org/legal/epl-v10.html
   </scm>
 
   <properties>
-    <aether.version>1.13.1</aether.version>
+    <aether.version>0.9.0-SNAPSHOT</aether.version>
   </properties>
 
   <dependencies>
@@ -46,35 +47,40 @@ http://www.eclipse.org/legal/epl-v10.html
     </dependency>
 
     <dependency>
-      <groupId>org.sonatype.aether</groupId>
+      <groupId>org.eclipse.aether</groupId>
       <artifactId>aether-api</artifactId>
       <version>${aether.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.sonatype.aether</groupId>
+      <groupId>org.eclipse.aether</groupId>
       <artifactId>aether-spi</artifactId>
       <version>${aether.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.sonatype.aether</groupId>
+      <groupId>org.eclipse.aether</groupId>
       <artifactId>aether-impl</artifactId>
       <version>${aether.version}</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-          <groupId>org.sonatype.aether</groupId>
+          <groupId>org.eclipse.aether</groupId>
           <artifactId>aether-util</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
 
     <dependency>
-      <groupId>org.sonatype.aether</groupId>
+      <groupId>org.eclipse.aether</groupId>
       <artifactId>aether-test-util</artifactId>
       <version>${aether.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>14.0-rc1</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

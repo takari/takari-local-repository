@@ -8,7 +8,12 @@ package org.eclipse.tesla.aether.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import io.tesla.aether.concurrency.DefaultFileLockManager;
+import io.tesla.aether.concurrency.FileLockManager.Lock;
+import io.tesla.aether.concurrency.LockingFileProcessor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,13 +27,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
-import org.eclipse.tesla.aether.concurrency.LockingFileProcessor;
-import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
+import org.eclipse.aether.internal.test.util.TestFileUtils;
+import org.eclipse.aether.spi.io.FileProcessor.ProgressListener;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonatype.aether.spi.io.FileProcessor.ProgressListener;
-import org.sonatype.aether.test.util.TestFileUtils;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
 import edu.umd.cs.mtc.TestFramework;

@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2011 Sonatype, Inc.
@@ -10,13 +10,13 @@ package org.eclipse.tesla.aether.concurrency;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.SyncContext;
-import org.sonatype.aether.impl.SyncContextFactory;
-import org.sonatype.aether.spi.locator.Service;
-import org.sonatype.aether.spi.locator.ServiceLocator;
-import org.sonatype.aether.spi.log.Logger;
-import org.sonatype.aether.spi.log.NullLogger;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.SyncContext;
+import org.eclipse.aether.impl.SyncContextFactory;
+import org.eclipse.aether.spi.locator.Service;
+import org.eclipse.aether.spi.locator.ServiceLocator;
+import org.eclipse.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.NullLoggerFactory;
 
 /**
  * A synchronization context factory that employs OS-level file locks to control access to artifacts/metadatas.
@@ -27,7 +27,7 @@ public class LockingSyncContextFactory
 {
 
     @Requirement
-    private Logger logger = NullLogger.INSTANCE;
+    private Logger logger = NullLoggerFactory.LOGGER;
 
     @Requirement
     private FileLockManager fileLockManager;
@@ -40,7 +40,7 @@ public class LockingSyncContextFactory
      */
     public LockingSyncContextFactory setLogger( Logger logger )
     {
-        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
+        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
         return this;
     }
 

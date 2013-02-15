@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2011 Sonatype, Inc.
@@ -8,6 +8,8 @@ package org.eclipse.tesla.aether.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
+import io.tesla.aether.concurrency.FileLockManager.Lock;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -15,15 +17,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeSet;
 
-import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.SyncContext;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.metadata.Metadata;
-import org.sonatype.aether.repository.LocalRepository;
-import org.sonatype.aether.repository.LocalRepositoryManager;
-import org.sonatype.aether.spi.log.Logger;
-import org.sonatype.aether.spi.log.NullLogger;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.SyncContext;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.metadata.Metadata;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.LocalRepositoryManager;
+import org.eclipse.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.NullLoggerFactory;
 
 /**
  * 
@@ -48,7 +49,7 @@ class LockingSyncContext
                                Logger logger )
     {
         this.shared = shared;
-        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
+        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
         this.fileLockManager = fileLockManager;
         this.localRepoMan = session.getLocalRepositoryManager();
     }
@@ -161,7 +162,7 @@ class LockingSyncContext
         return path.toString();
     }
 
-    public void release()
+    public void close()
     {
         for ( Lock lock : locks.values() )
         {
@@ -176,5 +177,4 @@ class LockingSyncContext
         }
         locks.clear();
     }
-
 }

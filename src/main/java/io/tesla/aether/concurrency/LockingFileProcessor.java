@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -8,21 +8,25 @@ package org.eclipse.tesla.aether.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
+import io.tesla.aether.concurrency.FileLockManager.Lock;
+
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileLock;
 
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
-import org.eclipse.tesla.aether.concurrency.FileLockManager.Lock;
-import org.sonatype.aether.spi.io.FileProcessor;
-import org.sonatype.aether.spi.locator.Service;
-import org.sonatype.aether.spi.locator.ServiceLocator;
-import org.sonatype.aether.spi.log.Logger;
-import org.sonatype.aether.spi.log.NullLogger;
+import org.eclipse.aether.spi.io.FileProcessor;
+import org.eclipse.aether.spi.locator.Service;
+import org.eclipse.aether.spi.locator.ServiceLocator;
+import org.eclipse.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.NullLoggerFactory;
+
+import com.google.common.io.ByteStreams;
 
 /**
  * A utility class helping with file-based operations.
@@ -37,7 +41,7 @@ public class LockingFileProcessor
     private static Boolean IS_SET_LAST_MODIFIED_SAFE;
 
     @Requirement
-    private Logger logger = NullLogger.INSTANCE;
+    private Logger logger = NullLoggerFactory.LOGGER;
 
     @Requirement
     private FileLockManager fileLockManager;
@@ -60,7 +64,7 @@ public class LockingFileProcessor
      */
     public LockingFileProcessor setLogger( Logger logger )
     {
-        this.logger = ( logger != null ) ? logger : NullLogger.INSTANCE;
+        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
         return this;
     }
 
@@ -147,6 +151,10 @@ public class LockingFileProcessor
         return ( parentDir != null && ( mkdirs( parentDir ) || parentDir.exists() ) && canonDir.mkdir() );
     }
 
+    public void copy(File source, File target) throws IOException {
+      copy(source, target, new NullProgressListener());
+    }
+    
     /**
      * Copy src- to target-file. Creates the necessary directories for the target file. In case of an error, the created
      * directories will be left on the file system.
@@ -219,6 +227,37 @@ public class LockingFileProcessor
         }
 
         return total;
+    }
+
+    public void write(File file, InputStream source) throws IOException 
+    {
+        Lock lock = fileLockManager.writeLock( file );
+
+        try
+        {
+            mkdirs( file.getParentFile() );
+ 
+            lock.lock();
+
+            RandomAccessFile raf = lock.getRandomAccessFile();
+
+            raf.seek( 0 );
+            if ( source != null )
+            {
+              byte[] buffer = new byte[1024];
+              int len;
+              while ((len = source.read(buffer)) != -1) 
+              {
+                  raf.write( buffer, 0, len );
+              }
+            }
+
+            raf.setLength( raf.getFilePointer() );
+        }
+        finally
+        {
+            unlock( lock );
+        }      
     }
 
     /**
@@ -317,5 +356,4 @@ public class LockingFileProcessor
             unlock( targetLock );
         }
     }
-
 }

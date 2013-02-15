@@ -8,25 +8,26 @@ package org.eclipse.tesla.aether.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
+import io.tesla.aether.concurrency.DefaultFileLockManager;
+import io.tesla.aether.concurrency.LockingSyncContextFactory;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.eclipse.tesla.aether.concurrency.LockingSyncContextFactory;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.SyncContext;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.impl.SyncContextFactory;
+import org.eclipse.aether.internal.test.util.TestFileUtils;
+import org.eclipse.aether.internal.test.util.TestUtils;
+import org.eclipse.aether.metadata.DefaultMetadata;
+import org.eclipse.aether.metadata.Metadata;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.SyncContext;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.impl.SyncContextFactory;
-import org.sonatype.aether.metadata.Metadata;
-import org.sonatype.aether.test.impl.SysoutLogger;
-import org.sonatype.aether.test.impl.TestRepositorySystemSession;
-import org.sonatype.aether.test.util.TestFileUtils;
-import org.sonatype.aether.test.util.impl.StubArtifact;
-import org.sonatype.aether.test.util.impl.StubMetadata;
 
 import edu.umd.cs.mtc.MultithreadedTestCase;
 import edu.umd.cs.mtc.TestFramework;
@@ -53,7 +54,7 @@ public class LockingSyncContextFactoryTest
     public void setup()
         throws Exception
     {
-        session = new TestRepositorySystemSession();
+        session = TestUtils.newSession();
         factory = newFactory();
     }
 
@@ -82,12 +83,12 @@ public class LockingSyncContextFactoryTest
         throws Exception
     {
         SyncContext context = factory.newInstance( session, false );
-        context.release();
+        context.close();
 
         context = factory.newInstance( session, false );
-        context.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
-        context.release();
-        context.release();
+        context.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
+        context.close();
+        context.close();
     }
 
     @Test
@@ -95,11 +96,11 @@ public class LockingSyncContextFactoryTest
         throws Exception
     {
         SyncContext context = factory.newInstance( session, false );
-        context.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ),
-                         Arrays.asList( new StubMetadata( "test.xml", Metadata.Nature.RELEASE ) ) );
-        context.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ),
-                         Arrays.asList( new StubMetadata( "test.xml", Metadata.Nature.RELEASE ) ) );
-        context.release();
+        context.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ),
+                         Arrays.asList( new DefaultMetadata( "test.xml", Metadata.Nature.RELEASE ) ) );
+        context.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ),
+                         Arrays.asList( new DefaultMetadata( "test.xml", Metadata.Nature.RELEASE ) ) );
+        context.close();
     }
 
     @Test
@@ -108,10 +109,10 @@ public class LockingSyncContextFactoryTest
     {
         SyncContext outer = factory.newInstance( session, true );
         SyncContext inner = factory.newInstance( session, true );
-        outer.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
-        inner.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
-        inner.release();
-        outer.release();
+        outer.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
+        inner.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
+        inner.close();
+        outer.close();
     }
 
     @Test
@@ -120,10 +121,10 @@ public class LockingSyncContextFactoryTest
     {
         SyncContext outer = factory.newInstance( session, false );
         SyncContext inner = factory.newInstance( session, false );
-        outer.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
-        inner.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
-        inner.release();
-        outer.release();
+        outer.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
+        inner.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
+        inner.close();
+        outer.close();
     }
 
     @Test
@@ -132,10 +133,10 @@ public class LockingSyncContextFactoryTest
     {
         SyncContext outer = factory.newInstance( session, false );
         SyncContext inner = factory.newInstance( session, true );
-        outer.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
-        inner.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
-        inner.release();
-        outer.release();
+        outer.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
+        inner.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
+        inner.close();
+        outer.close();
     }
 
     @Test
@@ -144,17 +145,17 @@ public class LockingSyncContextFactoryTest
     {
         SyncContext outer = factory.newInstance( session, true );
         SyncContext inner = factory.newInstance( session, false );
-        outer.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
+        outer.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
         try
         {
-            inner.acquire( Arrays.asList( new StubArtifact( "g:a:1" ) ), null );
-            inner.release();
+            inner.acquire( Arrays.asList( new DefaultArtifact( "g:a:1" ) ), null );
+            inner.close();
         }
         catch ( IllegalStateException e )
         {
             assertTrue( true );
         }
-        outer.release();
+        outer.close();
     }
 
     @Test
@@ -162,7 +163,7 @@ public class LockingSyncContextFactoryTest
     public void testBlockingWriteVsWrite()
         throws Throwable
     {
-        final List<Artifact> artifacts = Arrays.<Artifact> asList( new StubArtifact( "g:a:1" ) );
+        final List<Artifact> artifacts = Arrays.<Artifact> asList( new DefaultArtifact( "g:a:1" ) );
 
         TestFramework.runOnce( new MultithreadedTestCase()
         {
@@ -172,7 +173,7 @@ public class LockingSyncContextFactoryTest
                 SyncContext context = factory.newInstance( session, false );
                 context.acquire( artifacts, null );
                 waitForTick( 2 );
-                context.release();
+                context.close();
             }
 
             public void thread2()
@@ -182,7 +183,7 @@ public class LockingSyncContextFactoryTest
                 SyncContext context = factory.newInstance( session, false );
                 context.acquire( artifacts, null );
                 assertTick( 2 );
-                context.release();
+                context.close();
             }
         } );
     }
@@ -192,7 +193,7 @@ public class LockingSyncContextFactoryTest
     public void testBlockingReadVsWrite()
         throws Throwable
     {
-        final List<Artifact> artifacts = Arrays.<Artifact> asList( new StubArtifact( "g:a:1" ) );
+        final List<Artifact> artifacts = Arrays.<Artifact> asList( new DefaultArtifact( "g:a:1" ) );
 
         TestFramework.runOnce( new MultithreadedTestCase()
         {
@@ -202,7 +203,7 @@ public class LockingSyncContextFactoryTest
                 SyncContext context = factory.newInstance( session, true );
                 context.acquire( artifacts, null );
                 waitForTick( 2 );
-                context.release();
+                context.close();
             }
 
             public void thread2()
@@ -212,7 +213,7 @@ public class LockingSyncContextFactoryTest
                 SyncContext context = factory.newInstance( session, false );
                 context.acquire( artifacts, null );
                 assertTick( 2 );
-                context.release();
+                context.close();
             }
         } );
     }
@@ -222,7 +223,7 @@ public class LockingSyncContextFactoryTest
     public void testBlockingWriteVsRead()
         throws Throwable
     {
-        final List<Artifact> artifacts = Arrays.<Artifact> asList( new StubArtifact( "g:a:1" ) );
+        final List<Artifact> artifacts = Arrays.<Artifact> asList( new DefaultArtifact( "g:a:1" ) );
 
         TestFramework.runOnce( new MultithreadedTestCase()
         {
@@ -232,7 +233,7 @@ public class LockingSyncContextFactoryTest
                 SyncContext context = factory.newInstance( session, false );
                 context.acquire( artifacts, null );
                 waitForTick( 2 );
-                context.release();
+                context.close();
             }
 
             public void thread2()
@@ -242,7 +243,7 @@ public class LockingSyncContextFactoryTest
                 SyncContext context = factory.newInstance( session, true );
                 context.acquire( artifacts, null );
                 assertTick( 2 );
-                context.release();
+                context.close();
             }
         } );
     }

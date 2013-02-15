@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -13,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import org.sonatype.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.Logger;
 
 /**
  * @author Benjamin Hanzelmann
