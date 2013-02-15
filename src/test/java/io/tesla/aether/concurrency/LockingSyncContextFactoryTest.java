@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2011 Sonatype, Inc.
@@ -15,13 +15,13 @@ import io.tesla.aether.concurrency.LockingSyncContextFactory;
 import java.util.Arrays;
 import java.util.List;
 
-import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.SyncContext;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.impl.SyncContextFactory;
 import org.eclipse.aether.internal.test.util.TestFileUtils;
+import org.eclipse.aether.internal.test.util.TestLoggerFactory;
 import org.eclipse.aether.internal.test.util.TestUtils;
 import org.eclipse.aether.metadata.DefaultMetadata;
 import org.eclipse.aether.metadata.Metadata;
@@ -46,7 +46,7 @@ public class LockingSyncContextFactoryTest
     {
         LockingSyncContextFactory factory = new LockingSyncContextFactory();
         factory.setFileLockManager( new DefaultFileLockManager() );
-        factory.setLogger( new SysoutLogger() );
+        factory.setLoggerFactory( new TestLoggerFactory() );
         return factory;
     }
 

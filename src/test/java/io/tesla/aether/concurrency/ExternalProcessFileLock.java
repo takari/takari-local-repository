@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -14,52 +14,57 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
 
 /**
- * Locks two files at once in a forked JVM.
- * 
- * @author Benjamin Bentmann
+ * @author Benjamin Hanzelmann
  */
-public class ExternalProcessFileLocks
+public class ExternalProcessFileLock
 {
 
-    private final File file1;
-
-    private final File file2;
+    private final File file;
 
     public static void main( String[] args )
         throws Exception
     {
-        String path1 = args[0];
-        String path2 = args[1];
+        String path = args[0];
+        String time = args[1];
 
-        File file1 = new File( path1 + ".aetherlock" );
-        File file2 = new File( path2 + ".aetherlock" );
+        File file = new File( path + ".aetherlock" );
 
-        file1.getParentFile().mkdirs();
-        file2.getParentFile().mkdirs();
+        file.getParentFile().mkdirs();
 
-        // lock first file
-        RandomAccessFile raf1 = new RandomAccessFile( file1, "rw" );
-        FileLock lock1 = raf1.getChannel().lock();
+        int millis = Integer.valueOf( time );
 
-        // signal acquisition of first lock to parent process
-        File touchFile = getTouchFile( path1 );
+        RandomAccessFile raf = new RandomAccessFile( file, "rw" );
+        FileLock lock = raf.getChannel().lock();
+
+        File touchFile = getTouchFile( path );
         touchFile.createNewFile();
 
-        // lock second file
-        RandomAccessFile raf2 = new RandomAccessFile( file2, "rw" );
-        FileLock lock2 = raf2.getChannel().lock();
+        for ( long start = System.currentTimeMillis(); System.currentTimeMillis() - start < 5 * 1000
+            && touchFile.exists(); )
+        {
+            try
+            {
+                Thread.sleep( 10 );
+            }
+            catch ( InterruptedException e )
+            {
+                // ignored
+            }
+        }
 
-        lock1.release();
-        raf1.close();
+        long start = System.currentTimeMillis();
+        while ( System.currentTimeMillis() - start < millis )
+        {
+            Thread.sleep( millis / 10 + 1 );
+        }
 
-        lock2.release();
-        raf2.close();
+        lock.release();
+        raf.close();
     }
 
-    public ExternalProcessFileLocks( File file1, File file2 )
+    public ExternalProcessFileLock( File file )
     {
-        this.file1 = file1;
-        this.file2 = file2;
+        this.file = file;
     }
 
     private static File getTouchFile( String path )
@@ -67,20 +72,20 @@ public class ExternalProcessFileLocks
         return new File( path + ".touch" );
     }
 
-    public Process lockFiles()
+    public Process lockFile( int wait )
         throws InterruptedException, IOException
     {
         ForkJvm jvm = new ForkJvm();
         jvm.addClassPathEntry( getClass() );
-        jvm.setParameters( file1.getAbsolutePath(), file2.getAbsolutePath() );
+        jvm.setParameters( file.getAbsolutePath(), String.valueOf( wait ) );
         Process p = jvm.run( getClass().getName() );
         p.getOutputStream().close();
         return p;
     }
 
-    public long awaitLock1()
+    public long awaitLock()
     {
-        File touchFile = getTouchFile( file1.getAbsolutePath() );
+        File touchFile = getTouchFile( file.getAbsolutePath() );
 
         for ( long start = System.currentTimeMillis(); System.currentTimeMillis() - start < 10 * 1000; )
         {
@@ -100,7 +105,7 @@ public class ExternalProcessFileLocks
             }
         }
 
-        throw new IllegalStateException( "External lock on " + file1 + " wasn't aquired in time" );
+        throw new IllegalStateException( "External lock on " + file + " wasn't aquired in time" );
     }
 
 }

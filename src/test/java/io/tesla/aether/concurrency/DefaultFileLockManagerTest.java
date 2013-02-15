@@ -1,4 +1,4 @@
-package org.eclipse.tesla.aether.concurrency;
+package io.tesla.aether.concurrency;
 
 /*******************************************************************************
  * Copyright (c) 2010-2011 Sonatype, Inc.
@@ -24,6 +24,7 @@ import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.aether.internal.test.util.TestFileUtils;
+import org.eclipse.aether.internal.test.util.TestLoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,7 +41,7 @@ public class DefaultFileLockManagerTest
 
     private DefaultFileLockManager newManager()
     {
-        return new DefaultFileLockManager( new SysoutLogger() );
+        return new DefaultFileLockManager( new TestLoggerFactory() );
     }
 
     @Before

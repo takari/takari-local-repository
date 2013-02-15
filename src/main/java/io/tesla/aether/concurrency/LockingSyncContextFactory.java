@@ -16,6 +16,7 @@ import org.eclipse.aether.impl.SyncContextFactory;
 import org.eclipse.aether.spi.locator.Service;
 import org.eclipse.aether.spi.locator.ServiceLocator;
 import org.eclipse.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.LoggerFactory;
 import org.eclipse.aether.spi.log.NullLoggerFactory;
 
 /**
@@ -26,21 +27,21 @@ public class LockingSyncContextFactory
     implements SyncContextFactory, Service
 {
 
-    @Requirement
+    @Requirement( role = LoggerFactory.class )
     private Logger logger = NullLoggerFactory.LOGGER;
 
     @Requirement
     private FileLockManager fileLockManager;
 
     /**
-     * Sets the logger to use for this component.
+     * Sets the logger factory to use for this component.
      * 
-     * @param logger The logger to use, may be {@code null} to disable logging.
+     * @param loggerFactory The logger to use, may be {@code null} to disable logging.
      * @return This component for chaining, never {@code null}.
      */
-    public LockingSyncContextFactory setLogger( Logger logger )
+    public LockingSyncContextFactory setLoggerFactory( LoggerFactory loggerFactory )
     {
-        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
+        this.logger = NullLoggerFactory.getSafeLogger( loggerFactory, getClass() );
         return this;
     }
 
@@ -52,7 +53,7 @@ public class LockingSyncContextFactory
 
     public void initService( ServiceLocator locator )
     {
-        setLogger( locator.getService( Logger.class ) );
+        setLoggerFactory( locator.getService( LoggerFactory.class ) );
         setFileLockManager( locator.getService( FileLockManager.class ) );
     }
 

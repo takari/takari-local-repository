@@ -24,9 +24,8 @@ import org.eclipse.aether.spi.io.FileProcessor;
 import org.eclipse.aether.spi.locator.Service;
 import org.eclipse.aether.spi.locator.ServiceLocator;
 import org.eclipse.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.LoggerFactory;
 import org.eclipse.aether.spi.log.NullLoggerFactory;
-
-import com.google.common.io.ByteStreams;
 
 /**
  * A utility class helping with file-based operations.
@@ -40,7 +39,7 @@ public class LockingFileProcessor
 
     private static Boolean IS_SET_LAST_MODIFIED_SAFE;
 
-    @Requirement
+    @Requirement( role = LoggerFactory.class )
     private Logger logger = NullLoggerFactory.LOGGER;
 
     @Requirement
@@ -51,21 +50,28 @@ public class LockingFileProcessor
         // enable default constructor
     }
 
-    public LockingFileProcessor( FileLockManager fileLockManager )
+    LockingFileProcessor( FileLockManager fileLockManager, LoggerFactory loggerFactory )
     {
         setFileLockManager( fileLockManager );
+        setLoggerFactory( loggerFactory );
     }
 
     /**
-     * Sets the logger to use for this component.
+     * Sets the logger factory to use for this component.
      * 
-     * @param logger The logger to use, may be {@code null} to disable logging.
+     * @param loggerFactory The logger factory to use, may be {@code null} to disable logging.
      * @return This component for chaining, never {@code null}.
      */
-    public LockingFileProcessor setLogger( Logger logger )
+    public LockingFileProcessor setLoggerFactory( LoggerFactory loggerFactory )
     {
-        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
+        this.logger = NullLoggerFactory.getSafeLogger( loggerFactory, getClass() );
         return this;
+    }
+
+    void setLogger( LoggerFactory loggerFactory )
+    {
+        // plexus support
+        setLoggerFactory( loggerFactory );
     }
 
     /**
@@ -85,7 +91,7 @@ public class LockingFileProcessor
     public void initService( ServiceLocator locator )
     {
         setFileLockManager( locator.getService( FileLockManager.class ) );
-        setLogger( locator.getService( Logger.class ) );
+        setLoggerFactory( locator.getService( LoggerFactory.class ) );
     }
 
     private void close( Closeable closeable )
@@ -152,7 +158,7 @@ public class LockingFileProcessor
     }
 
     public void copy(File source, File target) throws IOException {
-      copy(source, target, new NullProgressListener());
+      copy(source, target, null);
     }
     
     /**

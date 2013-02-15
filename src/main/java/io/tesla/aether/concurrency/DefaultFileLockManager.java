@@ -20,6 +20,7 @@ import org.codehaus.plexus.component.annotations.Requirement;
 import org.eclipse.aether.spi.locator.Service;
 import org.eclipse.aether.spi.locator.ServiceLocator;
 import org.eclipse.aether.spi.log.Logger;
+import org.eclipse.aether.spi.log.LoggerFactory;
 import org.eclipse.aether.spi.log.NullLoggerFactory;
 
 /**
@@ -36,7 +37,7 @@ public class DefaultFileLockManager
     implements FileLockManager, Service
 {
 
-    @Requirement
+    @Requirement( role = LoggerFactory.class )
     private Logger logger = NullLoggerFactory.LOGGER;
 
     private static final ConcurrentMap<File, LockFile> lockFiles = new ConcurrentHashMap<File, LockFile>( 64 );
@@ -46,24 +47,32 @@ public class DefaultFileLockManager
         // enables no-arg constructor
     }
 
-    public DefaultFileLockManager( Logger logger )
+    DefaultFileLockManager( LoggerFactory loggerFactory )
     {
-        setLogger( logger );
+        setLoggerFactory( loggerFactory );
     }
 
     /**
-     * Set the logger to use.
+     * Sets the logger factory to use for this component.
      * 
-     * @param logger The logger to use. If {@code null}, disable logging.
+     * @param loggerFactory The logger factory to use, may be {@code null} to disable logging.
+     * @return This component for chaining, never {@code null}.
      */
-    public void setLogger( Logger logger )
+    public DefaultFileLockManager setLoggerFactory( LoggerFactory loggerFactory )
     {
-        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
+        this.logger = NullLoggerFactory.getSafeLogger( loggerFactory, getClass() );
+        return this;
+    }
+
+    void setLogger( LoggerFactory loggerFactory )
+    {
+        // plexus support
+        setLoggerFactory( loggerFactory );
     }
 
     public void initService( ServiceLocator locator )
     {
-        setLogger( locator.getService( Logger.class ) );
+        setLoggerFactory( locator.getService( LoggerFactory.class ) );
     }
 
     public Lock readLock( File target )
