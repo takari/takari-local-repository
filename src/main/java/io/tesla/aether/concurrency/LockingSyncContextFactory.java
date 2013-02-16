@@ -45,6 +45,12 @@ public class LockingSyncContextFactory
         return this;
     }
 
+    void setLogger( LoggerFactory loggerFactory )
+    {
+        // plexus support
+        setLoggerFactory( loggerFactory );
+    }
+
     public LockingSyncContextFactory setFileLockManager( FileLockManager fileLockManager )
     {
         this.fileLockManager = fileLockManager;
