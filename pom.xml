@@ -19,7 +19,7 @@ http://www.eclipse.org/legal/epl-v10.html
 
   <groupId>io.tesla.aether</groupId>
   <artifactId>tesla-concurrent-localrepo</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.1</version>
 
   <name>Tesla : Concurrent Local Repository</name>
   <description>
