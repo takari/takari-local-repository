@@ -8,7 +8,8 @@ package io.tesla.aether.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-import io.tesla.aether.concurrency.FileLockManager.Lock;
+import io.tesla.filelock.FileLockManager;
+import io.tesla.filelock.Lock;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,155 +27,116 @@ import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.spi.log.Logger;
 import org.eclipse.aether.spi.log.NullLoggerFactory;
 
-/**
- * 
- */
-class LockingSyncContext
-    implements SyncContext
-{
+class LockingSyncContext implements SyncContext {
+  private static final char SEPARATOR = '~';
+  private final Logger logger;
+  private final FileLockManager fileLockManager;
+  private final LocalRepositoryManager localRepoMan;
+  private final boolean shared;
+  private final Map<String, Lock> locks = new LinkedHashMap<String, Lock>();
 
-    private static final char SEPARATOR = '~';
+  public LockingSyncContext(boolean shared, RepositorySystemSession session, FileLockManager fileLockManager, Logger logger) {
+    this.shared = shared;
+    this.logger = (logger != null) ? logger : NullLoggerFactory.LOGGER;
+    this.fileLockManager = fileLockManager;
+    this.localRepoMan = session.getLocalRepositoryManager();
+  }
 
-    private final Logger logger;
+  public void acquire(Collection<? extends Artifact> artifacts, Collection<? extends Metadata> metadatas) {
+    Collection<String> paths = new TreeSet<String>();
+    addArtifactPaths(paths, artifacts);
+    addMetadataPaths(paths, metadatas);
 
-    private final FileLockManager fileLockManager;
+    File basedir = getLockBasedir();
 
-    private final LocalRepositoryManager localRepoMan;
+    for (String path : paths) {
+      File file = new File(basedir, path);
 
-    private final boolean shared;
-
-    private final Map<String, Lock> locks = new LinkedHashMap<String, Lock>();
-
-    public LockingSyncContext( boolean shared, RepositorySystemSession session, FileLockManager fileLockManager,
-                               Logger logger )
-    {
-        this.shared = shared;
-        this.logger = ( logger != null ) ? logger : NullLoggerFactory.LOGGER;
-        this.fileLockManager = fileLockManager;
-        this.localRepoMan = session.getLocalRepositoryManager();
-    }
-
-    public void acquire( Collection<? extends Artifact> artifacts, Collection<? extends Metadata> metadatas )
-    {
-        Collection<String> paths = new TreeSet<String>();
-        addArtifactPaths( paths, artifacts );
-        addMetadataPaths( paths, metadatas );
-
-        File basedir = getLockBasedir();
-
-        for ( String path : paths )
-        {
-            File file = new File( basedir, path );
-
-            Lock lock = locks.get( path );
-            if ( lock == null )
-            {
-                if ( shared )
-                {
-                    lock = fileLockManager.readLock( file );
-                }
-                else
-                {
-                    lock = fileLockManager.writeLock( file );
-                }
-
-                locks.put( path, lock );
-
-                try
-                {
-                    lock.lock();
-                }
-                catch ( IOException e )
-                {
-                    logger.warn( "Failed to lock file " + lock.getFile() + ": " + e );
-                }
-            }
-        }
-    }
-
-    private File getLockBasedir()
-    {
-        LocalRepository localRepo = localRepoMan.getRepository();
-
-        File basedir = new File( localRepo.getBasedir(), ".locks" );
-
-        return basedir;
-    }
-
-    private void addArtifactPaths( Collection<String> paths, Collection<? extends Artifact> artifacts )
-    {
-        if ( artifacts != null )
-        {
-            for ( Artifact artifact : artifacts )
-            {
-                String path = getPath( artifact );
-                paths.add( path );
-            }
-        }
-    }
-
-    private String getPath( Artifact artifact )
-    {
-        // NOTE: Don't use LRM.getPath*() as those paths could be different across processes, e.g. due to staging LRMs.
-
-        StringBuilder path = new StringBuilder( 128 );
-
-        path.append( artifact.getGroupId() ).append( SEPARATOR );
-        path.append( artifact.getArtifactId() ).append( SEPARATOR );
-        path.append( artifact.getBaseVersion() );
-
-        return path.toString();
-    }
-
-    private void addMetadataPaths( Collection<String> paths, Collection<? extends Metadata> metadatas )
-    {
-        if ( metadatas != null )
-        {
-            for ( Metadata metadata : metadatas )
-            {
-                String path = getPath( metadata );
-                paths.add( path );
-            }
-        }
-    }
-
-    private String getPath( Metadata metadata )
-    {
-        // NOTE: Don't use LRM.getPath*() as those paths could be different across processes, e.g. due to staging.
-
-        StringBuilder path = new StringBuilder( 128 );
-
-        if ( metadata.getGroupId().length() > 0 )
-        {
-            path.append( metadata.getGroupId() );
-
-            if ( metadata.getArtifactId().length() > 0 )
-            {
-                path.append( SEPARATOR ).append( metadata.getArtifactId() );
-
-                if ( metadata.getVersion().length() > 0 )
-                {
-                    path.append( SEPARATOR ).append( metadata.getVersion() );
-                }
-            }
+      Lock lock = locks.get(path);
+      if (lock == null) {
+        if (shared) {
+          lock = fileLockManager.readLock(file);
+        } else {
+          lock = fileLockManager.writeLock(file);
         }
 
-        return path.toString();
+        locks.put(path, lock);
+
+        try {
+          lock.lock();
+        } catch (IOException e) {
+          logger.warn("Failed to lock file " + lock.getFile() + ": " + e);
+        }
+      }
+    }
+  }
+
+  private File getLockBasedir() {
+    LocalRepository localRepo = localRepoMan.getRepository();
+
+    File basedir = new File(localRepo.getBasedir(), ".locks");
+
+    return basedir;
+  }
+
+  private void addArtifactPaths(Collection<String> paths, Collection<? extends Artifact> artifacts) {
+    if (artifacts != null) {
+      for (Artifact artifact : artifacts) {
+        String path = getPath(artifact);
+        paths.add(path);
+      }
+    }
+  }
+
+  private String getPath(Artifact artifact) {
+    // NOTE: Don't use LRM.getPath*() as those paths could be different across processes, e.g. due to staging LRMs.
+
+    StringBuilder path = new StringBuilder(128);
+
+    path.append(artifact.getGroupId()).append(SEPARATOR);
+    path.append(artifact.getArtifactId()).append(SEPARATOR);
+    path.append(artifact.getBaseVersion());
+
+    return path.toString();
+  }
+
+  private void addMetadataPaths(Collection<String> paths, Collection<? extends Metadata> metadatas) {
+    if (metadatas != null) {
+      for (Metadata metadata : metadatas) {
+        String path = getPath(metadata);
+        paths.add(path);
+      }
+    }
+  }
+
+  private String getPath(Metadata metadata) {
+    // NOTE: Don't use LRM.getPath*() as those paths could be different across processes, e.g. due to staging.
+
+    StringBuilder path = new StringBuilder(128);
+
+    if (metadata.getGroupId().length() > 0) {
+      path.append(metadata.getGroupId());
+
+      if (metadata.getArtifactId().length() > 0) {
+        path.append(SEPARATOR).append(metadata.getArtifactId());
+
+        if (metadata.getVersion().length() > 0) {
+          path.append(SEPARATOR).append(metadata.getVersion());
+        }
+      }
     }
 
-    public void close()
-    {
-        for ( Lock lock : locks.values() )
-        {
-            try
-            {
-                lock.unlock();
-            }
-            catch ( IOException e )
-            {
-                logger.warn( "Failed to unlock file " + lock.getFile() + ": " + e );
-            }
-        }
-        locks.clear();
+    return path.toString();
+  }
+
+  public void close() {
+    for (Lock lock : locks.values()) {
+      try {
+        lock.unlock();
+      } catch (IOException e) {
+        logger.warn("Failed to unlock file " + lock.getFile() + ": " + e);
+      }
     }
+    locks.clear();
+  }
 }
