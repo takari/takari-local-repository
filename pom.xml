@@ -14,7 +14,7 @@ http://www.eclipse.org/legal/epl-v10.html
   <parent>
     <groupId>io.tesla</groupId>
     <artifactId>tesla</artifactId>
-    <version>4</version>
+    <version>5</version>
   </parent>
 
   <groupId>io.tesla.aether</groupId>
@@ -42,7 +42,7 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>io.tesla</groupId>
       <artifactId>tesla-filelock</artifactId>
-      <version>0.0.1</version>
+      <version>0.0.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
