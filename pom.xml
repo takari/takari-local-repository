@@ -42,7 +42,7 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>io.takari</groupId>
       <artifactId>takari-filelock</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.5-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.aether</groupId>
@@ -107,6 +107,14 @@ http://www.eclipse.org/legal/epl-v10.html
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.6</source>
+          <target>1.6</target>
+        </configuration>
+      </plugin>        
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>sisu-maven-plugin</artifactId>
