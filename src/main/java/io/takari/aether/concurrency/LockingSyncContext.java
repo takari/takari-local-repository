@@ -1,7 +1,7 @@
-package io.tesla.aether.concurrency;
+package io.takari.aether.concurrency;
 
 /*******************************************************************************
- * Copyright (c) 2011-2013 Sonatype, Inc.
+ * Copyright (c) 2010-2014 Takari, Inc., Sonatype, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -24,12 +24,14 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.metadata.Metadata;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
-import org.eclipse.aether.spi.log.Logger;
-import org.eclipse.aether.spi.log.NullLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class LockingSyncContext implements SyncContext {
   private static final char SEPARATOR = '~';
-  private final Logger logger;
+  
+  private Logger logger = LoggerFactory.getLogger(LockingFileProcessor.class);  
+  
   private final FileLockManager fileLockManager;
   private final LocalRepositoryManager localRepoMan;
   private final boolean shared;
@@ -37,9 +39,9 @@ class LockingSyncContext implements SyncContext {
 
   public LockingSyncContext(boolean shared, RepositorySystemSession session, FileLockManager fileLockManager, Logger logger) {
     this.shared = shared;
-    this.logger = (logger != null) ? logger : NullLoggerFactory.LOGGER;
+    this.logger = logger;
     this.fileLockManager = fileLockManager;
-    this.localRepoMan = session.getLocalRepositoryManager();
+    this.localRepoMan = session.getLocalRepositoryManager();        
   }
 
   public void acquire(Collection<? extends Artifact> artifacts, Collection<? extends Metadata> metadatas) {

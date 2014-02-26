@@ -1,7 +1,7 @@
-package io.tesla.aether.concurrency;
+package io.takari.aether.concurrency;
 
 /*******************************************************************************
- * Copyright (c) 2010-2013 Sonatype, Inc.
+ * Copyright (c) 2010-2014 Takari, Inc., Sonatype, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -19,71 +19,32 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileLock;
 
-import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.component.annotations.Requirement;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
 import org.eclipse.aether.spi.io.FileProcessor;
-import org.eclipse.aether.spi.locator.Service;
-import org.eclipse.aether.spi.locator.ServiceLocator;
-import org.eclipse.aether.spi.log.Logger;
-import org.eclipse.aether.spi.log.LoggerFactory;
-import org.eclipse.aether.spi.log.NullLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A utility class helping with file-based operations.
  * 
  * @author Benjamin Hanzelmann
  */
-@Component(role = FileProcessor.class, hint = "default")
-public class LockingFileProcessor implements FileProcessor, Service {
+@Named
+@Singleton
+public class LockingFileProcessor implements FileProcessor {
 
   private static Boolean IS_SET_LAST_MODIFIED_SAFE;
 
-  @Requirement(role = LoggerFactory.class)
-  private Logger logger = NullLoggerFactory.LOGGER;
-
-  @Requirement
+  private Logger logger = LoggerFactory.getLogger(LockingFileProcessor.class);
+  
   private FileLockManager fileLockManager;
 
-  public LockingFileProcessor() {
-    // enable default constructor
-  }
-
-  LockingFileProcessor(FileLockManager fileLockManager, LoggerFactory loggerFactory) {
-    setFileLockManager(fileLockManager);
-    setLoggerFactory(loggerFactory);
-  }
-
-  /**
-   * Sets the logger factory to use for this component.
-   * 
-   * @param loggerFactory The logger factory to use, may be {@code null} to disable logging.
-   * @return This component for chaining, never {@code null}.
-   */
-  public LockingFileProcessor setLoggerFactory(LoggerFactory loggerFactory) {
-    this.logger = NullLoggerFactory.getSafeLogger(loggerFactory, getClass());
-    return this;
-  }
-
-  void setLogger(LoggerFactory loggerFactory) {
-    // plexus support
-    setLoggerFactory(loggerFactory);
-  }
-
-  /**
-   * Sets the LockManager to use.
-   * 
-   * @param lockManager The LockManager to use, may not be {@code null}.
-   */
-  public void setFileLockManager(FileLockManager lockManager) {
-    if (lockManager == null) {
-      throw new IllegalArgumentException("LockManager may not be null.");
-    }
-    this.fileLockManager = lockManager;
-  }
-
-  public void initService(ServiceLocator locator) {
-    setFileLockManager(locator.getService(FileLockManager.class));
-    setLoggerFactory(locator.getService(LoggerFactory.class));
+  @Inject
+  public LockingFileProcessor(FileLockManager fileLockManager) {
+    this.fileLockManager = fileLockManager;
   }
 
   private void close(Closeable closeable) {
@@ -198,6 +159,7 @@ public class LockingFileProcessor implements FileProcessor, Service {
   }
 
   public void write(File file, InputStream source) throws IOException {
+        
     Lock lock = fileLockManager.writeLock(file);
 
     try {

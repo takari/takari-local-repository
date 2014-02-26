@@ -8,7 +8,8 @@ which accompanies this distribution, and is available at
 http://www.eclipse.org/legal/epl-v10.html
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -42,13 +43,7 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>io.takari</groupId>
       <artifactId>takari-filelock</artifactId>
-      <version>0.0.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-component-annotations</artifactId>
-      <version>1.5.5</version>
-      <scope>provided</scope>
+      <version>0.0.4-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.aether</groupId>
@@ -74,7 +69,11 @@ http://www.eclipse.org/legal/epl-v10.html
         </exclusion>
       </exclusions>
     </dependency>
-
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.5</version>
+    </dependency>
     <dependency>
       <groupId>org.eclipse.aether</groupId>
       <artifactId>aether-test-util</artifactId>
@@ -93,27 +92,31 @@ http://www.eclipse.org/legal/epl-v10.html
       <version>1.01</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>1.7.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-component-annotations</artifactId>
+      <version>1.5.5</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>animal-sniffer-maven-plugin</artifactId>
-        <version>1.7</version>
-        <configuration>
-          <signature>
-            <groupId>org.codehaus.mojo.signature</groupId>
-            <artifactId>java15</artifactId>
-            <version>1.0</version>
-          </signature>
-        </configuration>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>sisu-maven-plugin</artifactId>
+        <version>1.1</version>
         <executions>
           <execution>
-            <id>check-java-1.5-compat</id>
-            <phase>process-classes</phase>
+            <id>generate-index</id>
             <goals>
-              <goal>check</goal>
+              <goal>main-index</goal>
             </goals>
           </execution>
         </executions>
