@@ -12,16 +12,16 @@ http://www.eclipse.org/legal/epl-v10.html
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.tesla</groupId>
-    <artifactId>tesla</artifactId>
-    <version>5</version>
+    <groupId>io.takari</groupId>
+    <artifactId>takari</artifactId>
+    <version>9</version>
   </parent>
 
-  <groupId>io.tesla.aether</groupId>
-  <artifactId>tesla-concurrent-localrepo</artifactId>
+  <groupId>io.takari.aether</groupId>
+  <artifactId>takari-concurrent-localrepo</artifactId>
   <version>0.0.5-SNAPSHOT</version>
 
-  <name>Tesla : Concurrent Local Repository</name>
+  <name>Takari :: Concurrent Local Repository</name>
   <description>
     This extension for Aether contains a synchronization context that employs OS-level file locks to enable safe
     concurrent access to the local repository across processes.
@@ -29,9 +29,9 @@ http://www.eclipse.org/legal/epl-v10.html
   <inceptionYear>2010</inceptionYear>
 
   <scm>
-    <connection>scm:git:git@github.com:tesla/tesla-concurrent-localrepo.git</connection>
-    <developerConnection>scm:git:git@github.com:tesla/tesla-concurrent-localrepo.git</developerConnection>
-    <url>http://github.com/tesla/tesla-concurrent-localrepo</url>
+    <connection>scm:git:git@github.com:takari/takari-concurrent-localrepo.git</connection>
+    <developerConnection>scm:git:git@github.com:takari/takari-concurrent-localrepo.git</developerConnection>
+    <url>http://github.com/takari/takari-concurrent-localrepo</url>
   </scm>
 
   <properties>
@@ -40,9 +40,9 @@ http://www.eclipse.org/legal/epl-v10.html
 
   <dependencies>
     <dependency>
-      <groupId>io.tesla</groupId>
-      <artifactId>tesla-filelock</artifactId>
-      <version>0.0.2</version>
+      <groupId>io.takari</groupId>
+      <artifactId>takari-filelock</artifactId>
+      <version>0.0.3</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.plexus</groupId>
