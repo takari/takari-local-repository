@@ -43,7 +43,7 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>io.takari</groupId>
       <artifactId>takari-filelock</artifactId>
-      <version>0.0.4-SNAPSHOT</version>
+      <version>0.0.4</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.aether</groupId>
