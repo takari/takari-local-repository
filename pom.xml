@@ -19,7 +19,7 @@ http://www.eclipse.org/legal/epl-v10.html
 
   <groupId>io.takari.aether</groupId>
   <artifactId>takari-concurrent-localrepo</artifactId>
-  <version>0.0.5-SNAPSHOT</version>
+  <version>0.0.5</version>
 
   <name>Takari :: Concurrent Local Repository</name>
   <description>
