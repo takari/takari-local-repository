@@ -18,10 +18,10 @@ http://www.eclipse.org/legal/epl-v10.html
   </parent>
 
   <groupId>io.takari.aether</groupId>
-  <artifactId>takari-concurrent-localrepo</artifactId>
+  <artifactId>takari-local-repository</artifactId>
   <version>0.0.8-SNAPSHOT</version>
 
-  <name>Takari :: Concurrent Local Repository</name>
+  <name>Takari :: Local Repository</name>
   <description>
     This extension for Aether contains a synchronization context that employs OS-level file locks to enable safe
     concurrent access to the local repository across processes.
@@ -41,8 +41,8 @@ http://www.eclipse.org/legal/epl-v10.html
   <dependencies>
     <dependency>
       <groupId>io.takari</groupId>
-      <artifactId>takari-filelock</artifactId>
-      <version>0.0.5</version>
+      <artifactId>takari-filemanager</artifactId>
+      <version>0.0.6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.eclipse.aether</groupId>

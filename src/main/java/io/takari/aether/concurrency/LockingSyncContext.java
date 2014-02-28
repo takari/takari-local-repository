@@ -8,8 +8,8 @@ package io.takari.aether.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-import io.tesla.filelock.FileLockManager;
-import io.tesla.filelock.Lock;
+import io.takari.filemanager.FileManager;
+import io.takari.filemanager.Lock;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +22,6 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.SyncContext;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.metadata.Metadata;
-import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,12 +31,12 @@ class LockingSyncContext implements SyncContext {
   
   private Logger logger = LoggerFactory.getLogger(LockingFileProcessor.class);  
   
-  private final FileLockManager fileLockManager;
+  private final FileManager fileLockManager;
   private final LocalRepositoryManager localRepoMan;
   private final boolean shared;
   private final Map<String, Lock> locks = new LinkedHashMap<String, Lock>();
 
-  public LockingSyncContext(boolean shared, RepositorySystemSession session, FileLockManager fileLockManager, Logger logger) {
+  public LockingSyncContext(boolean shared, RepositorySystemSession session, FileManager fileLockManager, Logger logger) {
     this.shared = shared;
     this.logger = logger;
     this.fileLockManager = fileLockManager;
@@ -48,12 +47,9 @@ class LockingSyncContext implements SyncContext {
     Collection<String> paths = new TreeSet<String>();
     addArtifactPaths(paths, artifacts);
     addMetadataPaths(paths, metadatas);
-
     File basedir = getLockBasedir();
-
     for (String path : paths) {
       File file = new File(basedir, path);
-
       Lock lock = locks.get(path);
       if (lock == null) {
         if (shared) {
@@ -61,9 +57,7 @@ class LockingSyncContext implements SyncContext {
         } else {
           lock = fileLockManager.writeLock(file);
         }
-
         locks.put(path, lock);
-
         try {
           lock.lock();
         } catch (IOException e) {
@@ -74,11 +68,7 @@ class LockingSyncContext implements SyncContext {
   }
 
   private File getLockBasedir() {
-    LocalRepository localRepo = localRepoMan.getRepository();
-
-    File basedir = new File(localRepo.getBasedir(), ".locks");
-
-    return basedir;
+    return new File(localRepoMan.getRepository().getBasedir(), ".locks");
   }
 
   private void addArtifactPaths(Collection<String> paths, Collection<? extends Artifact> artifacts) {
@@ -92,13 +82,10 @@ class LockingSyncContext implements SyncContext {
 
   private String getPath(Artifact artifact) {
     // NOTE: Don't use LRM.getPath*() as those paths could be different across processes, e.g. due to staging LRMs.
-
     StringBuilder path = new StringBuilder(128);
-
     path.append(artifact.getGroupId()).append(SEPARATOR);
     path.append(artifact.getArtifactId()).append(SEPARATOR);
     path.append(artifact.getBaseVersion());
-
     return path.toString();
   }
 
@@ -113,21 +100,16 @@ class LockingSyncContext implements SyncContext {
 
   private String getPath(Metadata metadata) {
     // NOTE: Don't use LRM.getPath*() as those paths could be different across processes, e.g. due to staging.
-
     StringBuilder path = new StringBuilder(128);
-
     if (metadata.getGroupId().length() > 0) {
       path.append(metadata.getGroupId());
-
       if (metadata.getArtifactId().length() > 0) {
         path.append(SEPARATOR).append(metadata.getArtifactId());
-
         if (metadata.getVersion().length() > 0) {
           path.append(SEPARATOR).append(metadata.getVersion());
         }
       }
     }
-
     return path.toString();
   }
 

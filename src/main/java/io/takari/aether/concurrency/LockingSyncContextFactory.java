@@ -8,7 +8,7 @@ package io.takari.aether.concurrency;
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-import io.tesla.filelock.FileLockManager;
+import io.takari.filemanager.FileManager;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -31,10 +31,10 @@ public class LockingSyncContextFactory implements SyncContextFactory {
 
   private Logger logger = LoggerFactory.getLogger(LockingFileProcessor.class);
 
-  private FileLockManager fileLockManager;
+  private FileManager fileLockManager;
 
   @Inject
-  public LockingSyncContextFactory(FileLockManager fileLockManager) {
+  public LockingSyncContextFactory(FileManager fileLockManager) {
     this.fileLockManager = fileLockManager;
   }
 
