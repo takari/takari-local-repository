@@ -1,7 +1,7 @@
-Tesla Concurrent Local Repository
+Takari Concurrent Local Repository
 =================================
 
-This extension for Tesla enables safe concurrent use of the local repository such that multiple builds can concurrently
+This extension for Takari enables safe concurrent use of the local repository such that multiple builds can concurrently
 resolve and install artifacts to a shared local repository. This is especially useful for continuous integration systems
 that usually build multiple projects in parallel and want to share the same local repository to reduce disk consumption.
 
