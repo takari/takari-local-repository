@@ -43,6 +43,7 @@ http://www.eclipse.org/legal/epl-v10.html
       <groupId>io.takari</groupId>
       <artifactId>takari-filemanager</artifactId>
       <version>0.7.0</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.aether</groupId>
@@ -72,6 +73,13 @@ http://www.eclipse.org/legal/epl-v10.html
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>1.7.5</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>14.0.1</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.eclipse.aether</groupId>

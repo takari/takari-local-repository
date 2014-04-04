@@ -11,14 +11,19 @@ package io.takari.aether.localrepo;
  *    Sonatype, Inc. - initial API and implementation
  *******************************************************************************/
 
+import java.util.List;
+
 import javax.inject.Named;
 
 import org.codehaus.plexus.component.annotations.Component;
+import org.codehaus.plexus.component.annotations.Requirement;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
 import org.eclipse.aether.spi.localrepo.LocalRepositoryManagerFactory;
+
+import com.google.common.collect.Lists;
 
 /**
  * Creates enhanced local repository managers for repository types {@code "default"} or {@code "" (automatic)}.
@@ -31,9 +36,16 @@ import org.eclipse.aether.spi.localrepo.LocalRepositoryManagerFactory;
 @Component(role = LocalRepositoryManagerFactory.class, hint = "takari")
 public class TakariLocalRepositoryManagerFactory implements LocalRepositoryManagerFactory {
 
+  @Requirement(optional = true)
+  List<ArtifactValidator> validators;
+  
   public LocalRepositoryManager newInstance(RepositorySystemSession session, LocalRepository repository) throws NoLocalRepositoryManagerException {
     if ("".equals(repository.getContentType()) || "default".equals(repository.getContentType())) {
-      return new TakariLocalRepositoryManager(repository.getBasedir(), session);
+      if(validators != null) {
+      return new TakariLocalRepositoryManager(repository.getBasedir(), session, validators);
+      } else {
+        return new TakariLocalRepositoryManager(repository.getBasedir(), session, Lists.<ArtifactValidator>newArrayList());        
+      }
     } else {
       throw new NoLocalRepositoryManagerException(repository);
     }

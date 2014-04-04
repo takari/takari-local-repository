@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Manages potentially concurrent accesses to a properties file.
  */
-class TrackingFileManager {
+public class TrackingFileManager {
 
   private Logger logger = LoggerFactory.getLogger( TrackingFileManager.class );  
   

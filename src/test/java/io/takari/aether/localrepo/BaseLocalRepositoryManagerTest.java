@@ -27,21 +27,23 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
 /**
  */
 public class BaseLocalRepositoryManagerTest {
 
   private File basedir;
 
-  private BaseLocalRepositoryManager manager;
+  private TakariLocalRepositoryManager manager;
 
   private RepositorySystemSession session;
 
   @Before
   public void setup() throws IOException {
     basedir = TestFileUtils.createTempDir("simple-repo");
-    manager = new BaseLocalRepositoryManager(basedir);
     session = TestUtils.newSession();
+    manager = new TakariLocalRepositoryManager(basedir, session, Lists.<ArtifactValidator>newArrayList());
   }
 
   @After

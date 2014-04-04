@@ -37,45 +37,32 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
 public class TakariLocalRepositoryManagerTest {
 
   private Artifact artifact;
-
   private Artifact snapshot;
-
   private File basedir;
-
   private TakariLocalRepositoryManager manager;
-
   private File artifactFile;
-
   private RemoteRepository repository;
-
   private String testContext = "project/compile";
-
   private RepositorySystemSession session;
-
   private Metadata metadata;
-
   private Metadata noVerMetadata;
 
   @Before
   public void setup() throws Exception {
     String url = TestFileUtils.createTempDir("enhanced-remote-repo").toURI().toURL().toString();
     repository = new RemoteRepository.Builder("enhanced-remote-repo", "default", url).setRepositoryManager(true).build();
-
     artifact = new DefaultArtifact("gid", "aid", "", "jar", "1-test", Collections.<String, String> emptyMap(), TestFileUtils.createTempFile("artifact"));
-
     snapshot = new DefaultArtifact("gid", "aid", "", "jar", "1.0-20120710.231549-9", Collections.<String, String> emptyMap(), TestFileUtils.createTempFile("artifact"));
-
     metadata = new DefaultMetadata("gid", "aid", "1-test", "maven-metadata.xml", Nature.RELEASE, TestFileUtils.createTempFile("metadata"));
-
     noVerMetadata = new DefaultMetadata("gid", "aid", null, "maven-metadata.xml", Nature.RELEASE, TestFileUtils.createTempFile("metadata"));
-
     basedir = TestFileUtils.createTempDir("enhanced-repo");
     session = TestUtils.newSession();
-    manager = new TakariLocalRepositoryManager(basedir, session);
-
+    manager = new TakariLocalRepositoryManager(basedir, session, Lists.<ArtifactValidator> newArrayList());
     artifactFile = new File(basedir, manager.getPathForLocalArtifact(artifact));
   }
 
