@@ -19,7 +19,7 @@ http://www.eclipse.org/legal/epl-v10.html
 
   <groupId>io.takari.aether</groupId>
   <artifactId>takari-local-repository</artifactId>
-  <version>0.10.2-SNAPSHOT</version>
+  <version>0.10.2</version>
 
   <name>Takari :: Local Repository</name>
   <description>
