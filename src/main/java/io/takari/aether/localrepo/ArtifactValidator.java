@@ -1,11 +1,13 @@
 package io.takari.aether.localrepo;
 
-import java.util.Properties;
-
-import org.eclipse.aether.repository.LocalArtifactRequest;
+import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.RemoteRepository;
 
 public interface ArtifactValidator {
 
-  void validate(LocalRepository localRepository, LocalArtifactRequest localArtifactRequest, Properties artifactProperties) throws ArtifactValidationException;
+  void validateOnAdd(Artifact artifact, LocalRepository localRepository, RemoteRepository remoteRepository) throws ArtifactValidationException;
+  
+  void validateOnFind(Artifact artifact, LocalRepository localRepository, RemoteRepository remoteRepository) throws ArtifactValidationException;
+  
 }

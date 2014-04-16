@@ -65,7 +65,6 @@ public class TakariLocalRepositoryManager implements LocalRepositoryManager {
   private final LocalRepository localRepository;
   private final List<ArtifactValidator> validators;
 
-  
   public TakariLocalRepositoryManager(File basedir, RepositorySystemSession session, List<ArtifactValidator> validators) {
     if (basedir == null) {
       throw new IllegalArgumentException("base directory has not been specified");
@@ -83,28 +82,25 @@ public class TakariLocalRepositoryManager implements LocalRepositoryManager {
   public LocalArtifactResult find(RepositorySystemSession session, LocalArtifactRequest request) {
     String path = getPathForArtifact(request.getArtifact(), false);
     File file = new File(getRepository().getBasedir(), path);
-
     LocalArtifactResult result = new LocalArtifactResult(request);
-
     if (file.isFile()) {
       result.setFile(file);
-
       Properties props = readRepos(file);
-
       if (props.get(getKey(file, LOCAL_REPO_ID)) != null) {
+        //
         // artifact installed into the local repo is always accepted
+        //
         result.setAvailable(true);
       } else {
         String context = request.getContext();
-        for (RemoteRepository repository : request.getRepositories()) {
-          if (props.get(getKey(file, getRepositoryKey(repository, context))) != null) {
+        for (RemoteRepository remoteRepository : request.getRepositories()) {
+          if (props.get(getKey(file, getRepositoryKey(remoteRepository, context))) != null) {
+            // artifact downloaded from remote repository is accepted 
             for (ArtifactValidator validator : validators) {
-              validator.validate(localRepository, request, props);
+              validator.validateOnFind(request.getArtifact(), localRepository, remoteRepository);
             }
-            // artifact downloaded from remote repository is accepted only downloaded from request
-            // repositories
             result.setAvailable(true);
-            result.setRepository(repository);
+            result.setRepository(remoteRepository);
             break;
           }
         }
@@ -142,13 +138,14 @@ public class TakariLocalRepositoryManager implements LocalRepositoryManager {
       updates.put(getKey(file, repository), "");
     }
 
-    // Write out location of the jar so we can use it for subsequent validation
-    if (request.getRepository() != null) {
-      updates.put(file.getName() + REPOSITORY_URI, request.getRepository().getUrl());
-    }
-
     File trackingFile = getTrackingFile(file);
     trackingFileManager.update(trackingFile, updates);
+    
+    // The files are now present in the local repository
+    for (ArtifactValidator validator : validators) {
+      validator.validateOnAdd(request.getArtifact(), localRepository, request.getRepository());
+    }
+    
   }
 
   private Collection<String> getRepositoryKeys(RemoteRepository repository, Collection<String> contexts) {
