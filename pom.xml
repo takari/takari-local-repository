@@ -10,13 +10,12 @@ http://www.eclipse.org/legal/epl-v10.html
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <parent>
     <groupId>io.takari</groupId>
     <artifactId>takari</artifactId>
     <version>9</version>
   </parent>
-
+  <packaging>takari-jar</packaging>
   <groupId>io.takari.aether</groupId>
   <artifactId>takari-local-repository</artifactId>
   <version>0.10.4-SNAPSHOT</version>
@@ -27,12 +26,6 @@ http://www.eclipse.org/legal/epl-v10.html
     concurrent access to the local repository across processes.
   </description>
   <inceptionYear>2010</inceptionYear>
-
-  <scm>
-    <connection>scm:git:git@github.com:takari/takari-concurrent-localrepo.git</connection>
-    <developerConnection>scm:git:git@github.com:takari/takari-concurrent-localrepo.git</developerConnection>
-    <url>http://github.com/takari/takari-concurrent-localrepo</url>
-  </scm>
 
   <properties>
     <aetherVersion>0.9.0.M2</aetherVersion>
@@ -149,6 +142,12 @@ http://www.eclipse.org/legal/epl-v10.html
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>io.takari.maven.plugins</groupId>
+        <artifactId>takari-lifecycle-plugin</artifactId>
+        <version>1.7.0</version>
+        <extensions>true</extensions>
+      </plugin>      
     </plugins>
   </build>
 </project>

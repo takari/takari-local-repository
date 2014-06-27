@@ -92,6 +92,29 @@ public class TakariLocalRepositoryManager implements LocalRepositoryManager {
         //
         result.setAvailable(true);
       } else {
+        RemoteRepository remoteRepositoryForArtifact = null;
+        String context = request.getContext();
+        for (RemoteRepository remoteRepository : request.getRepositories()) {
+          if (props.get(getKey(file, getRepositoryKey(remoteRepository, context))) != null) {
+            //
+            // This is the remote repository that the artifact was resolved from initially. If the artifact is now available from
+            // a different remote repository
+            remoteRepositoryForArtifact = remoteRepository;
+            result.setRepository(remoteRepositoryForArtifact);            
+            break;
+          }
+        }        
+        for (ArtifactValidator validator : validators) {
+          validator.validateOnFind(request.getArtifact(), localRepository, remoteRepositoryForArtifact);
+        }                
+        result.setFile( file );
+        result.setAvailable( true );
+        
+        /*
+        
+        This is the check to make sure what is found locally comes from the same remote repository. We actually don't care where it comes
+        from really provided the SHA1 is the same.
+        
         String context = request.getContext();
         for (RemoteRepository remoteRepository : request.getRepositories()) {
           if (props.get(getKey(file, getRepositoryKey(remoteRepository, context))) != null) {
@@ -105,11 +128,11 @@ public class TakariLocalRepositoryManager implements LocalRepositoryManager {
           }
         }
         if (!result.isAvailable() && !isTracked(props, file)) {
-          /*
-           * NOTE: The artifact is present but not tracked at all, for inter-op with simple local repo, assume the artifact was locally installed.
-           */
+           // NOTE: The artifact is present but not tracked at all, for inter-op with simple local repo, assume the artifact was locally installed.
           result.setAvailable(true);
         }
+        */
+        
       }
     }
 

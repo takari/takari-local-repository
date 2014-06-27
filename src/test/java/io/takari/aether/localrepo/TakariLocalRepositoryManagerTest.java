@@ -165,6 +165,11 @@ public class TakariLocalRepositoryManagerTest {
     assertEquals(repository, result.getRepository());
   }
 
+  /*
+  
+  So this makes sure that if the artifact is found in a different repo it fails, but we want to start providing better checks such
+  that we will accept the artifact if it has the same SHA1.
+  
   @Test
   public void testDoNotFindDifferentContext() throws Exception {
     addRemoteArtifact(artifact);
@@ -173,6 +178,8 @@ public class TakariLocalRepositoryManagerTest {
     LocalArtifactResult result = manager.find(session, request);
     assertFalse(result.isAvailable());
   }
+  
+  */
 
   @Test
   public void testDoNotFindNullFile() throws Exception {

@@ -29,8 +29,6 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
-/**
- */
 public class BaseLocalRepositoryManagerTest {
 
   private File basedir;
