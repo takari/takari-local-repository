@@ -28,14 +28,14 @@ http://www.eclipse.org/legal/epl-v10.html
   <inceptionYear>2010</inceptionYear>
 
   <properties>
-    <aetherVersion>0.9.0.M2</aetherVersion>
+    <aetherVersion>1.0.0.v20140518</aetherVersion>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>io.takari</groupId>
       <artifactId>takari-filemanager</artifactId>
-      <version>0.8.1</version>
+      <version>0.8.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -55,12 +55,6 @@ http://www.eclipse.org/legal/epl-v10.html
       <artifactId>aether-impl</artifactId>
       <version>${aetherVersion}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.eclipse.aether</groupId>
-          <artifactId>aether-util</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -112,8 +106,8 @@ http://www.eclipse.org/legal/epl-v10.html
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
       </plugin>        
       <plugin>
@@ -145,7 +139,7 @@ http://www.eclipse.org/legal/epl-v10.html
       <plugin>
         <groupId>io.takari.maven.plugins</groupId>
         <artifactId>takari-lifecycle-plugin</artifactId>
-        <version>1.7.0</version>
+        <version>1.7.5</version>
         <extensions>true</extensions>
       </plugin>      
     </plugins>
