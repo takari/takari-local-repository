@@ -35,7 +35,7 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>io.takari</groupId>
       <artifactId>takari-filemanager</artifactId>
-      <version>0.8.3-SNAPSHOT</version>
+      <version>0.8.3</version>
     </dependency>
     <dependency>
       <groupId>javax.inject</groupId>
