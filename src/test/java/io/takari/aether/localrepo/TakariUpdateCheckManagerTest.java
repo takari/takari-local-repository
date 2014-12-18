@@ -256,7 +256,6 @@ public class TakariUpdateCheckManagerTest {
     session.setResolutionErrorPolicy(new SimpleResolutionErrorPolicy(false, true));
     manager.checkMetadata(session, check);
     assertEquals(false, check.isRequired());
-    assertTrue(check.getException() instanceof MetadataTransferException);
     assertTrue(String.valueOf(check.getException()), check.getException().getMessage().contains("some error"));
   }
 
@@ -503,7 +502,6 @@ public class TakariUpdateCheckManagerTest {
     session.setResolutionErrorPolicy(new SimpleResolutionErrorPolicy(false, true));
     manager.checkArtifact(session, check);
     assertEquals(false, check.isRequired());
-    assertTrue(check.getException() instanceof ArtifactTransferException);
   }
 
   @Test

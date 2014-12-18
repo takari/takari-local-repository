@@ -197,18 +197,6 @@ public class TakariLocalRepositoryManager implements LocalRepositoryManager {
     return file.getName() + '>' + repository;
   }
 
-  private boolean isTracked(Properties props, File file) {
-    if (props != null) {
-      String keyPrefix = file.getName() + '>';
-      for (Object key : props.keySet()) {
-        if (key.toString().startsWith(keyPrefix)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   public static String getString(Map<?, ?> properties, String defaultValue, String... keys) {
     for (String key : keys) {
       Object value = properties.get(key);
