@@ -13,10 +13,9 @@ package io.takari.aether.localrepo;
 
 import java.util.List;
 
+import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.component.annotations.Requirement;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
@@ -33,10 +32,9 @@ import com.google.common.collect.Lists;
  * known source repositories of an artifact, thereby emulating physically separated artifact caches per remote repository.
  */
 @Named("takari")
-@Component(role = LocalRepositoryManagerFactory.class, hint = "takari")
 public class TakariLocalRepositoryManagerFactory implements LocalRepositoryManagerFactory {
 
-  @Requirement(optional = true)
+  @Inject
   List<ArtifactValidator> validators;
   
   public LocalRepositoryManager newInstance(RepositorySystemSession session, LocalRepository repository) throws NoLocalRepositoryManagerException {

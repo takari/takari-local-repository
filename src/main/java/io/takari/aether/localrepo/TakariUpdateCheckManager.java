@@ -24,8 +24,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import org.codehaus.plexus.component.annotations.Component;
-import org.codehaus.plexus.component.annotations.Requirement;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.SessionData;
 import org.eclipse.aether.artifact.Artifact;
@@ -49,14 +47,13 @@ import org.slf4j.LoggerFactory;
  */
 @Named
 @Singleton
-@Component(role = UpdateCheckManager.class)
 public class TakariUpdateCheckManager implements UpdateCheckManager {
 
   private Logger logger = LoggerFactory.getLogger(TakariUpdateCheckManager.class);
 
   private static final String ERROR_FLAG = "maven.retryOnDownloadError";
   
-  @Requirement
+  @Inject
   private final UpdatePolicyAnalyzer updatePolicyAnalyzer;
 
   private static final String UPDATED_KEY_SUFFIX = ".lastUpdated";

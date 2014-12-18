@@ -97,12 +97,6 @@ http://www.eclipse.org/legal/epl-v10.html
       <version>1.7.5</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-component-annotations</artifactId>
-      <version>1.5.5</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
 
   <build>
@@ -116,19 +110,6 @@ http://www.eclipse.org/legal/epl-v10.html
             <id>generate-index</id>
             <goals>
               <goal>main-index</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.plexus</groupId>
-        <artifactId>plexus-component-metadata</artifactId>
-        <version>1.5.5</version>
-        <executions>
-          <execution>
-            <id>generate-components-xml</id>
-            <goals>
-              <goal>generate-metadata</goal>
             </goals>
           </execution>
         </executions>
