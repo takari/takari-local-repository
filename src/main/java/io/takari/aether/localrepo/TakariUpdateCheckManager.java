@@ -54,7 +54,7 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
   private static final String ERROR_FLAG = "maven.retryOnDownloadError";
   
   @Inject
-  private final UpdatePolicyAnalyzer updatePolicyAnalyzer;
+  private UpdatePolicyAnalyzer updatePolicyAnalyzer;
 
   private static final String UPDATED_KEY_SUFFIX = ".lastUpdated";
 
