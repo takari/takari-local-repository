@@ -70,7 +70,7 @@ http://www.eclipse.org/legal/epl-v10.html
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>14.0.1</version>
+      <version>18.0</version> <!-- must match version used in maven core -->
       <scope>provided</scope>
     </dependency>
     <dependency>
