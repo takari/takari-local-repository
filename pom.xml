@@ -13,7 +13,7 @@ http://www.eclipse.org/legal/epl-v10.html
   <parent>
     <groupId>io.takari</groupId>
     <artifactId>takari</artifactId>
-    <version>14</version>
+    <version>15</version>
   </parent>
   <packaging>takari-jar</packaging>
   <groupId>io.takari.aether</groupId>
@@ -102,23 +102,9 @@ http://www.eclipse.org/legal/epl-v10.html
   <build>
     <plugins>
       <plugin>
-        <groupId>org.sonatype.plugins</groupId>
+        <groupId>org.eclipse.sisu</groupId>
         <artifactId>sisu-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>generate-index</id>
-            <goals>
-              <goal>main-index</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
-      <plugin>
-        <groupId>io.takari.maven.plugins</groupId>
-        <artifactId>takari-lifecycle-plugin</artifactId>
-        <version>1.8.5</version>
-        <extensions>true</extensions>
-      </plugin>      
     </plugins>
   </build>
 </project>
