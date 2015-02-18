@@ -27,7 +27,7 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.impl.UpdateCheck;
-import org.eclipse.aether.internal.impl.DefaultUpdateCheckManager;
+import org.eclipse.aether.impl.UpdateCheckManager;
 import org.eclipse.aether.internal.impl.DefaultUpdatePolicyAnalyzer;
 import org.eclipse.aether.internal.test.util.TestUtils;
 import org.eclipse.aether.metadata.DefaultMetadata;
@@ -48,7 +48,7 @@ public class TakariUpdateCheckManagerTest {
 
   private static final int HOUR = 60 * 60 * 1000;
 
-  private DefaultUpdateCheckManager manager;
+  private UpdateCheckManager manager;
 
   private DefaultRepositorySystemSession session;
 
@@ -70,7 +70,7 @@ public class TakariUpdateCheckManagerTest {
 
     session = TestUtils.newSession();
     repository = new RemoteRepository.Builder("id", "default", TestFileUtils.createTempDir().toURI().toURL().toString()).build();
-    manager = new DefaultUpdateCheckManager().setUpdatePolicyAnalyzer(new DefaultUpdatePolicyAnalyzer());
+    manager = new TakariUpdateCheckManager().setUpdatePolicyAnalyzer(new DefaultUpdatePolicyAnalyzer());
     metadata = new DefaultMetadata("gid", "aid", "ver", "maven-metadata.xml", Metadata.Nature.RELEASE_OR_SNAPSHOT, metadataFile);
     artifact = new DefaultArtifact("gid", "aid", "", "ext", "ver").setFile(artifactFile);
   }

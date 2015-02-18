@@ -1,0 +1,15 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.takari.aether.localrepo.its</groupId>
+  <artifactId>update-check</artifactId>
+  <version>0.1.0</version>
+  
+  <dependencies>
+    <dependency>
+      <groupId>io.takari.aether.localrepo.its</groupId>
+      <artifactId>non-existent</artifactId>
+      <version>1.0</version>
+    </dependency>
+  </dependencies>
+    
+</project>

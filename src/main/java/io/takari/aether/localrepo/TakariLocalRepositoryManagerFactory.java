@@ -37,7 +37,8 @@ public class TakariLocalRepositoryManagerFactory implements LocalRepositoryManag
   @Inject
   List<ArtifactValidator> validators;
   
-  public LocalRepositoryManager newInstance(RepositorySystemSession session, LocalRepository repository) throws NoLocalRepositoryManagerException {
+  @Override
+public LocalRepositoryManager newInstance(RepositorySystemSession session, LocalRepository repository) throws NoLocalRepositoryManagerException {
     if ("".equals(repository.getContentType()) || "default".equals(repository.getContentType())) {
       if(validators != null) {
       return new TakariLocalRepositoryManager(repository.getBasedir(), session, validators);
@@ -49,7 +50,8 @@ public class TakariLocalRepositoryManagerFactory implements LocalRepositoryManag
     }
   }
 
-  public float getPriority() {
+  @Override
+public float getPriority() {
     return 20;
   }
 

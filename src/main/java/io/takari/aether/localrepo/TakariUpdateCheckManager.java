@@ -1,7 +1,7 @@
 package io.takari.aether.localrepo;
 
 /*******************************************************************************
- * Copyright (c) 2010, 2012 Sonatype, Inc.
+ * Copyright (c) 2010, 2011 Sonatype, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -43,16 +43,14 @@ import org.eclipse.aether.transfer.MetadataTransferException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- */
-@Named
+@Named("takari")
 @Singleton
 public class TakariUpdateCheckManager implements UpdateCheckManager {
 
   private Logger logger = LoggerFactory.getLogger(TakariUpdateCheckManager.class);
 
   private static final String ERROR_FLAG = "maven.retryOnDownloadError";
-  
+
   @Inject
   private UpdatePolicyAnalyzer updatePolicyAnalyzer;
 
@@ -66,16 +64,21 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
 
   private final boolean allowImmediateRetryOfDownloadFailures;
 
-  @Inject
-  TakariUpdateCheckManager(UpdatePolicyAnalyzer updatePolicyAnalyzer) {
-    this.updatePolicyAnalyzer = updatePolicyAnalyzer;
+  public TakariUpdateCheckManager() {    
     if (System.getProperty(ERROR_FLAG) != null) {
       this.allowImmediateRetryOfDownloadFailures = Boolean.getBoolean(ERROR_FLAG);
     } else {
       this.allowImmediateRetryOfDownloadFailures = false;
-    }
+    }    
   }
-
+      
+  public UpdateCheckManager setUpdatePolicyAnalyzer(UpdatePolicyAnalyzer updatePolicyAnalyzer) {
+    this.updatePolicyAnalyzer = updatePolicyAnalyzer;
+    return this;
+  }  
+  
+  
+  @Override
   public void checkArtifact(RepositorySystemSession session, UpdateCheck<Artifact, ArtifactTransferException> check) {
     if (check.getLocalLastUpdated() != 0 && !isUpdatedRequired(session, check.getLocalLastUpdated(), check.getPolicy())) {
       if (logger.isDebugEnabled()) {
@@ -168,6 +171,7 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
     }
   }
 
+  @Override
   public void checkMetadata(RepositorySystemSession session, UpdateCheck<Metadata, MetadataTransferException> check) {
     if (check.getLocalLastUpdated() != 0 && !isUpdatedRequired(session, check.getLocalLastUpdated(), check.getPolicy())) {
       if (logger.isDebugEnabled()) {
@@ -376,6 +380,7 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
     return (props != null) ? props : new Properties();
   }
 
+  @Override
   public void touchArtifact(RepositorySystemSession session, UpdateCheck<Artifact, ArtifactTransferException> check) {
     Artifact artifact = check.getItem();
     File artifactFile = check.getFile();
@@ -402,6 +407,7 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
     return false;
   }
 
+  @Override
   public void touchMetadata(RepositorySystemSession session, UpdateCheck<Metadata, MetadataTransferException> check) {
     Metadata metadata = check.getItem();
     File metadataFile = check.getFile();
@@ -460,5 +466,5 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
       return ResolutionErrorPolicy.CACHE_DISABLED;
     }
     return rep.getMetadataPolicy(session, new ResolutionErrorPolicyRequest<Metadata>(metadata, repository));
-  }  
+  }
 }
