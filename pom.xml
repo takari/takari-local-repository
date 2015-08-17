@@ -10,9 +10,9 @@
   <parent>
     <groupId>io.takari</groupId>
     <artifactId>takari</artifactId>
-    <version>15</version>
+    <version>18</version>
   </parent>
-  <packaging>takari-jar</packaging>
+  <packaging>takari-maven-component</packaging>
   <groupId>io.takari.aether</groupId>
   <artifactId>takari-local-repository</artifactId>
   <version>0.11.2-SNAPSHOT</version>
@@ -127,36 +127,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>io.takari.maven.plugins</groupId>
-        <artifactId>takari-lifecycle-plugin</artifactId>
-        <extensions>true</extensions>
-        <executions>
-          <execution>
-            <id>testProperties</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>testProperties</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.eclipse.sisu</groupId>
-        <artifactId>sisu-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>io.takari.maven.plugins</groupId>
-          <artifactId>takari-lifecycle-plugin</artifactId>
-          <version>1.10.3</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
 </project>
