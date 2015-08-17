@@ -18,7 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(MavenJUnitTestRunner.class)
-@MavenVersions({"3.2.6-SNAPSHOT"})
+@MavenVersions({"3.3.1", "3.3.3"})
 public class TakariLocalRepositoryTest {
 
   @Rule
