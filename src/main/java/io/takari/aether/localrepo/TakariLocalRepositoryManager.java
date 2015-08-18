@@ -103,13 +103,20 @@ public class TakariLocalRepositoryManager implements LocalRepositoryManager {
             result.setRepository(remoteRepositoryForArtifact);            
             break;
           }
-        }        
-        for (ArtifactValidator validator : validators) {
-          validator.validateOnFind(request.getArtifact(), localRepository, remoteRepositoryForArtifact);
-        }                
-        result.setFile( file );
-        result.setAvailable( true );
-        
+        }
+        try {
+          for (ArtifactValidator validator : validators) {
+            validator.validateOnFind(request.getArtifact(), localRepository,
+                remoteRepositoryForArtifact);
+          }
+          result.setFile(file);
+          result.setAvailable(true);
+        } catch (ArtifactUnavailableException e) {
+          // sadly, there is no way to communicate the exception/message to the caller
+          result.setFile(null);
+          result.setAvailable(false);
+        }
+
         /*
         
         This is the check to make sure what is found locally comes from the same remote repository. We actually don't care where it comes
