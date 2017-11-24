@@ -335,6 +335,7 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
     buffer.append(AuthenticationDigest.forRepository(session, repository)).append('@');
 
     buffer.append(repository.getContentType()).append('-');
+    buffer.append(repository.getId() ).append( '-' );
     buffer.append(normalizeRepoUrl(repository.getUrl()));
 
     return buffer.toString();
@@ -342,7 +343,7 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
 
   private String normalizeRepoUrl(String url) {
     String result = url;
-    if (url != null && !url.endsWith("/")) {
+    if (url != null && url.length() > 0 && !url.endsWith("/")) {
       result = url + '/';
     }
     return result;
