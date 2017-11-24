@@ -82,7 +82,7 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
   public void checkArtifact(RepositorySystemSession session, UpdateCheck<Artifact, ArtifactTransferException> check) {
     if (check.getLocalLastUpdated() != 0 && !isUpdatedRequired(session, check.getLocalLastUpdated(), check.getPolicy())) {
       if (logger.isDebugEnabled()) {
-        logger.debug("Skipped remote update check for " + check.getItem() + ", locally installed artifact up-to-date.");
+        logger.debug("Skipped remote request for " + check.getItem() + ", locally installed artifact up-to-date.");
       }
 
       check.setRequired(false);
@@ -108,11 +108,14 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
     String error = getError(props, dataKey);
 
     long lastUpdated;
-    if (fileExists) {
-      lastUpdated = artifactFile.lastModified();
-    } else if (error == null) {
-      // this is the first attempt ever
-      lastUpdated = 0;
+    if (error == null) {
+      if (fileExists) {
+        // last update was successful
+        lastUpdated = artifactFile.lastModified();
+      } else {
+        // this is the first attempt ever
+        lastUpdated = 0;
+      }
     } else if (error.length() <= 0) {
       // artifact did not exist
       lastUpdated = getLastUpdated(props, dataKey);
@@ -122,22 +125,22 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
       lastUpdated = getLastUpdated(props, transferKey);
     }
 
-    if (isAlreadyUpdated(session.getData(), updateKey)) {
+    if (lastUpdated == 0) {
+        check.setRequired(true);
+    } else if (isAlreadyUpdated(session.getData(), updateKey)) {
       if (logger.isDebugEnabled()) {
-        logger.debug("Skipped remote update check for " + check.getItem() + ", already updated during this session.");
+        logger.debug("Skipped remote request for " + check.getItem() + ", already updated during this session.");
       }
 
       check.setRequired(false);
       if (error != null) {
         check.setException(newException(error, artifact, repository));
       }
-    } else if (lastUpdated == 0) {
-      check.setRequired(true);
     } else if (isUpdatedRequired(session, lastUpdated, check.getPolicy())) {
       check.setRequired(true);
     } else if (fileExists) {
       if (logger.isDebugEnabled()) {
-        logger.debug("Skipped remote update check for " + check.getItem() + ", locally cached artifact up-to-date.");
+        logger.debug("Skipped remote request for " + check.getItem() + ", locally cached artifact up-to-date.");
       }
 
       check.setRequired(false);
@@ -175,7 +178,7 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
   public void checkMetadata(RepositorySystemSession session, UpdateCheck<Metadata, MetadataTransferException> check) {
     if (check.getLocalLastUpdated() != 0 && !isUpdatedRequired(session, check.getLocalLastUpdated(), check.getPolicy())) {
       if (logger.isDebugEnabled()) {
-        logger.debug("Skipped remote update check for " + check.getItem() + ", locally installed metadata up-to-date.");
+        logger.debug("Skipped remote request for " + check.getItem() + ", locally installed metadata up-to-date.");
       }
 
       check.setRequired(false);
@@ -218,22 +221,22 @@ public class TakariUpdateCheckManager implements UpdateCheckManager {
       lastUpdated = getLastUpdated(props, transferKey);
     }
 
-    if (isAlreadyUpdated(session.getData(), updateKey)) {
+    if (lastUpdated == 0) {
+        check.setRequired(true);
+    } else if (isAlreadyUpdated(session.getData(), updateKey)) {
       if (logger.isDebugEnabled()) {
-        logger.debug("Skipped remote update check for " + check.getItem() + ", already updated during this session.");
+        logger.debug("Skipped remote request for " + check.getItem() + ", already updated during this session.");
       }
 
       check.setRequired(false);
       if (error != null) {
         check.setException(newException(error, metadata, repository));
       }
-    } else if (lastUpdated == 0) {
-      check.setRequired(true);
     } else if (isUpdatedRequired(session, lastUpdated, check.getPolicy())) {
       check.setRequired(true);
     } else if (fileExists) {
       if (logger.isDebugEnabled()) {
-        logger.debug("Skipped remote update check for " + check.getItem() + ", locally cached metadata up-to-date.");
+        logger.debug("Skipped remote request for " + check.getItem() + ", locally cached metadata up-to-date.");
       }
 
       check.setRequired(false);
