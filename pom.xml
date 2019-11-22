@@ -10,7 +10,7 @@
   <parent>
     <groupId>io.takari</groupId>
     <artifactId>takari</artifactId>
-    <version>18</version>
+    <version>28</version>
   </parent>
   <packaging>takari-maven-component</packaging>
   <groupId>io.takari.aether</groupId>
