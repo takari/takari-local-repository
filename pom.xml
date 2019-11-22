@@ -28,19 +28,6 @@
     <aetherVersion>1.0.0.v20140518</aetherVersion>
   </properties>
 
-  <repositories>
-    <repository>
-      <id>takari-snapshots</id>
-      <url>https://repository.takari.io/content/repositories/snapshots</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>javax.inject</groupId>
